@@ -8,3 +8,6 @@ actix-web = "4.0"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.0", features = ["full"] }
 serde_json = "1.0"
+actix-http = "3.0"
+tokio-util = "0.7"
+actix-service = "2.0"
