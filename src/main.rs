@@ -3,13 +3,7 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use serde::Deserialize;
 use std::fs;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use warp::Filter;
-use warp::http::Response;
-use warp::hyper::body::Bytes;
-use warp::hyper::Body;
-use hyper::Client;
 
 #[derive(Deserialize)]
 struct Config {
