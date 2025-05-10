@@ -1,7 +1,7 @@
 use tracing_subscriber;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_appender::rolling;
-use tracing::{info, warn};
+use tracing::warn;
 use std::env;
 use sentry::{ClientInitGuard, init};
 
