@@ -19,15 +19,8 @@ test:
 clean:
 	cargo clean
 
-# Add a target to generate Cobertura report
-coverage/cobertura.xml:
-	mkdir -p coverage
-	cargo tarpaulin --out Xml --output-dir coverage
-
-# Update the coverage target to include both HTML and Cobertura reports
+# Combine tarpaulin commands to generate both HTML and Cobertura reports in a single run
 .PHONY: coverage
-coverage: coverage/html/index.html coverage/cobertura.xml
-
-coverage/html/index.html:
+coverage:
 	mkdir -p coverage
-	cargo tarpaulin --out Html --output-dir coverage
+	cargo tarpaulin --out Html --out Xml --output-dir coverage
