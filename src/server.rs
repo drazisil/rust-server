@@ -16,12 +16,7 @@ fn create_response(status: warp::http::StatusCode, body: &str) -> warp::http::Re
         .unwrap()
 }
 
-pub async fn run_server(config: Config) {
-    let span = span!(Level::INFO, "run_server");
-    let _enter = span.enter();
-
-    let db = Database;
-
+fn setup_routes(db: Database) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     let health_route = warp::path("health").map(|| {
         create_response(warp::http::StatusCode::OK, "Server is running")
     }).boxed();
@@ -38,12 +33,13 @@ pub async fn run_server(config: Config) {
         create_response(warp::http::StatusCode::NOT_FOUND, "Not Found")
     }).boxed();
 
-    let routes = health_route
+    health_route
         .or(auth_login_route)
         .or(shard_list_route)
-        .or(not_found_route);
+        .or(not_found_route)
+}
 
-    // Start the TCP server to forward requests to the Warp server
+fn start_tcp_server(routes: impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone + Send + Sync + 'static, config: Config) {
     for port in config.tcp_ports {
         let span = span!(Level::INFO, "tcp_server", port = port);
         let _enter = span.enter();
@@ -102,6 +98,18 @@ pub async fn run_server(config: Config) {
             }
         });
     }
+}
+
+pub async fn run_server(config: Config) {
+    let span = span!(Level::INFO, "run_server");
+    let _enter = span.enter();
+
+    // Setup routes
+    let db = Database;
+    let routes = setup_routes(db);
+
+    // Start TCP server
+    start_tcp_server(routes, config);
 
     // Wait for a termination signal to keep the runtime alive
     signal::ctrl_c().await.expect("Failed to listen for ctrl_c signal");
