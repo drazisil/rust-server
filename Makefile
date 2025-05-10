@@ -1,34 +1,34 @@
 # Makefile for building and testing the Rust server
 
-# Default target
+# Add inline comments for each target to provide descriptions
 .PHONY: all
-all: build
+all: build # Default target to build the project
 
-# Build the project
 .PHONY: build
-build:
+build: # Compile the Rust code
 	cargo build
 
-# Run tests
 .PHONY: test
-test:
+test: # Run all test cases
 	cargo test
 
-# Clean the project
 .PHONY: clean
-clean:
+clean: # Remove build artifacts
 	cargo clean
 
-# Combine tarpaulin commands to generate both HTML and Cobertura reports in a single run
 .PHONY: coverage
-coverage:
+coverage: # Generate HTML and Cobertura coverage reports
 	mkdir -p coverage
 	cargo tarpaulin --out Html --out Xml --output-dir coverage
 
-# Update the help target to dynamically list all PHONY targets
 .PHONY: help
-help:
+help: # Show this help message
 	@echo "Available targets:"
 	@grep -E '^\.PHONY: ' Makefile | sed 's/\.PHONY: //g' | while read -r target; do \
-		echo "  $$target - $$(grep -A 1 "^\.PHONY: $$target" Makefile | tail -n 1 | sed 's/^# //')"; \
+		description=$$(grep "^$$target:" Makefile | sed -n 's/.*# //p'); \
+		if [ -n "$$description" ]; then \
+			echo "  $$target - $$description"; \
+		else \
+			echo "  $$target - No description available"; \
+		fi; \
 	done
