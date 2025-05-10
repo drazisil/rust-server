@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 use warp::http::{Response, StatusCode};
-use futures::StreamExt;
 
 #[derive(Debug)]
 pub struct AuthLoginSuccess {

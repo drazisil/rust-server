@@ -13,8 +13,20 @@ use tracing_appender::non_blocking::NonBlocking;
 use tracing_subscriber::fmt::writer::MakeWriterExt; // For combining writers
 use tracing_appender::non_blocking;
 use tracing_appender::non_blocking::WorkerGuard; // Import WorkerGuard to manage writer lifetimes
+use std::fs;
+use serde::Deserialize;
+use tracing_subscriber::filter::LevelFilter;
+
+#[derive(Deserialize)]
+struct Config {
+    log_level: String,
+    // Other fields...
+}
 
 pub fn init_logging() -> Option<ClientInitGuard> {
+    let config: Config = serde_json::from_str(&fs::read_to_string("config.json").expect("Failed to read config.json")).expect("Invalid config.json format");
+    let log_level = config.log_level.parse::<LevelFilter>().expect("Invalid log level in config.json");
+
     let file_appender = rolling::daily("logs", "server.log");
     let (file_writer, file_guard): (NonBlocking, WorkerGuard) = non_blocking(file_appender);
     let (stdout_writer, stdout_guard): (NonBlocking, WorkerGuard) = non_blocking(std::io::stdout());
@@ -34,7 +46,8 @@ pub fn init_logging() -> Option<ClientInitGuard> {
 
             let subscriber = Registry::default()
                 .with(fmt::layer().with_writer(combined_writer))
-                .with(sentry_tracing_layer());
+                .with(sentry_tracing_layer())
+                .with(log_level);
 
             tracing::subscriber::set_global_default(subscriber).expect("Failed to set global subscriber");
 
@@ -51,7 +64,8 @@ pub fn init_logging() -> Option<ClientInitGuard> {
     }
 
     let subscriber = Registry::default()
-        .with(fmt::layer().with_writer(combined_writer));
+        .with(fmt::layer().with_writer(combined_writer))
+        .with(log_level);
 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set global subscriber");
 
