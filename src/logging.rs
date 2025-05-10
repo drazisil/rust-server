@@ -1,3 +1,6 @@
+// This file is part of the Oxide project, licensed under GPL-3.0-or-later.
+// See the COPYING.md file in the project root for more information.
+
 use tracing_subscriber::fmt; // Simplify the configuration
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::Registry;

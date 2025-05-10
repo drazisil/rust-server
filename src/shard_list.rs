@@ -1,3 +1,6 @@
+// This file is part of the Oxide project, licensed under GPL-3.0-or-later.
+// See the COPYING.md file in the project root for more information.
+
 use warp::http::{Response, StatusCode};
 
 use crate::database::SHARD_DATABASE;

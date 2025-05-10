@@ -1,3 +1,6 @@
+// This file is part of the Oxide project, licensed under GPL-3.0-or-later.
+// See the COPYING.md file in the project root for more information.
+
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
 use serde::Serialize;

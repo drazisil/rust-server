@@ -1,3 +1,6 @@
+// This file is part of the Oxide project, licensed under GPL-3.0-or-later.
+// See the COPYING.md file in the project root for more information.
+
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::signal;
