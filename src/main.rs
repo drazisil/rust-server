@@ -19,7 +19,7 @@ async fn start_tcp_servers(ports: Vec<u16>) -> std::io::Result<()> {
 
     for port in ports {
         let handle = tokio::spawn(async move {
-            let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await.unwrap();
+            let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
             println!("TCP server running on 127.0.0.1:{}", port);
 
             loop {
