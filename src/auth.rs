@@ -58,3 +58,43 @@ impl Database {
         username == "valid_user" && password == "valid_password"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use warp::Reply;
+
+    #[tokio::test]
+    async fn test_handle_auth_login_success() {
+        let mut query = HashMap::new();
+        query.insert("username".to_string(), "valid_user".to_string());
+        query.insert("password".to_string(), "valid_password".to_string());
+
+        let db = Database;
+        let response = handle_auth_login(query, db).await.unwrap();
+        let body = response.into_response().into_body();
+        let body = hyper::body::to_bytes(body).await.unwrap();
+        let body = String::from_utf8(body.to_vec()).unwrap();
+
+        assert!(body.contains("Valid=TRUE"));
+        assert!(body.contains("Ticket=<auth_ticket>"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_auth_login_failure() {
+        let mut query = HashMap::new();
+        query.insert("username".to_string(), "invalid_user".to_string());
+        query.insert("password".to_string(), "wrong_password".to_string());
+
+        let db = Database;
+        let response = handle_auth_login(query, db).await.unwrap();
+        let body = response.into_response().into_body();
+        let body = hyper::body::to_bytes(body).await.unwrap();
+        let body = String::from_utf8(body.to_vec()).unwrap();
+
+        assert!(body.contains("reasoncode=INVALID_CREDENTIALS"));
+        assert!(body.contains("reasontest=Invalid username or password"));
+        assert!(body.contains("reasonurl=https://example.com/help"));
+    }
+}
