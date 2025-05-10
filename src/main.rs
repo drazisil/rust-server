@@ -116,4 +116,30 @@ mod tests {
         // Assert the response contains the expected body
         assert!(response.contains("Server is running"), "Unexpected response: {}", response);
     }
+
+    #[tokio::test]
+    async fn test_auth_login_route() {
+        // Start the server in a background task
+        tokio::spawn(async {
+            run_server().await;
+        });
+
+        // Allow some time for the server to start
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+
+        // Connect to the TCP server
+        let mut stream = TcpStream::connect("127.0.0.1:3000").await.expect("Failed to connect to TCP server");
+
+        // Send an HTTP GET request to the /AuthLogin route
+        let request = "GET /AuthLogin HTTP/1.1\r\nHost: localhost\r\n\r\n";
+        stream.write_all(request.as_bytes()).await.expect("Failed to write to stream");
+
+        // Read the response
+        let mut buffer = [0; 1024];
+        let size = stream.read(&mut buffer).await.expect("Failed to read from stream");
+        let response = String::from_utf8_lossy(&buffer[..size]);
+
+        // Assert the response contains the expected body
+        assert!(response.contains("OK"), "Unexpected response: {}", response);
+    }
 }
