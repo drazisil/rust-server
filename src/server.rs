@@ -7,38 +7,41 @@ use crate::config::Config;
 use crate::auth::{handle_auth_login, Database};
 use crate::shard_list::shard_list_filter;
 
+fn create_response(status: warp::http::StatusCode, body: &str) -> warp::http::Response<String> {
+    warp::http::Response::builder()
+        .status(status)
+        .version(warp::http::Version::HTTP_10)
+        .header("Connection", "close")
+        .body(body.to_string())
+        .unwrap()
+}
+
 pub async fn run_server(config: Config) {
     let span = span!(Level::INFO, "run_server");
     let _enter = span.enter();
 
-    // Define the health check route
-    let health_route = warp::path("health").map(|| {
-        warp::http::Response::builder()
-            .status(warp::http::StatusCode::OK)
-            .version(warp::http::Version::HTTP_10)
-            .header("Connection", "close")
-            .body("Server is running")
-            .unwrap()
-    });
-
     let db = Database;
+
+    let health_route = warp::path("health").map(|| {
+        create_response(warp::http::StatusCode::OK, "Server is running")
+    }).boxed();
+
     let auth_login_route = warp::path("AuthLogin")
         .and(warp::query::<std::collections::HashMap<String, String>>())
         .and(warp::any().map(move || db.clone()))
-        .and_then(handle_auth_login);
+        .and_then(handle_auth_login)
+        .boxed();
 
-    // Define a default 404 handler
+    let shard_list_route = warp::path("ShardList").map(|| shard_list_filter()).boxed();
+
     let not_found_route = warp::any().map(|| {
-        warp::http::Response::builder()
-            .status(warp::http::StatusCode::NOT_FOUND)
-            .version(warp::http::Version::HTTP_10)
-            .header("Connection", "close")
-            .body("Not Found")
-            .unwrap()
-    });
+        create_response(warp::http::StatusCode::NOT_FOUND, "Not Found")
+    }).boxed();
 
-    // Combine all routes
-    let routes = health_route.or(auth_login_route).or(shard_list_filter()).or(not_found_route);
+    let routes = health_route
+        .or(auth_login_route)
+        .or(shard_list_route)
+        .or(not_found_route);
 
     // Start the TCP server to forward requests to the Warp server
     for port in config.tcp_ports {
