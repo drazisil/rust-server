@@ -75,11 +75,11 @@ The `/AuthLogin` endpoint validates user credentials provided via GET query para
   Valid=TRUE
   Ticket=<auth_ticket>
   ```
-- **401 Unauthorized**: If the credentials are invalid.
+- **401 Unauthorized**: If the credentials are invalid. The values for `reasoncode`, `reasontext`, and `reasonurl` are dynamically generated based on the context of the failure.
   ```
-  reasoncode=INVALID_CREDENTIALS
-  reasontest=Invalid username or password
-  reasonurl=https://example.com/help
+  reasoncode=<dynamic_reason_code>
+  reasontext=<dynamic_reason_text>
+  reasonurl=<dynamic_reason_url>
   ```
 
 ### Default 404 Handler
