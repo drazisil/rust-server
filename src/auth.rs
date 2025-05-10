@@ -42,9 +42,9 @@ pub async fn handle_auth_login(
         }
     }
     let failure_response = AuthLoginFailure {
-        reason_code: "INVALID_CREDENTIALS".to_string(),
+        reason_code: "INV-100".to_string(),
         reason_text: "Invalid username or password".to_string(),
-        reason_url: "https://example.com/help".to_string(),
+        reason_url: "https://winehq.com".to_string(),
     };
     Ok(reply::with_status(failure_response.to_response(), StatusCode::UNAUTHORIZED))
 }
