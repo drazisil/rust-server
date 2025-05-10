@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 use warp::http::{Response, StatusCode};
+use futures::StreamExt;
 
 #[derive(Debug)]
 pub struct AuthLoginSuccess {
@@ -78,6 +79,7 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
     use warp::Reply;
+    use futures::StreamExt;
 
     #[tokio::test]
     async fn test_handle_auth_login_success() {
@@ -87,10 +89,16 @@ mod tests {
 
         let db = Database;
         let response = handle_auth_login(query, db).await.unwrap();
-        let body = response.into_response().into_body();
-        let body = hyper::body::to_bytes(body).await.unwrap();
-        let body = String::from_utf8(body.to_vec()).unwrap();
+        let mut body = response.into_response().into_body();
 
+        let mut body_content = Vec::new();
+        while let Some(chunk) = body.next().await {
+            let chunk = chunk.unwrap();
+            body_content.extend_from_slice(&chunk);
+        }
+        let body = String::from_utf8(body_content).unwrap();
+
+        println!("Body content: {}", body);
         assert!(body.contains("Valid=TRUE"));
         assert!(body.contains("Ticket=<auth_ticket>"));
     }
@@ -103,10 +111,16 @@ mod tests {
 
         let db = Database;
         let response = handle_auth_login(query, db).await.unwrap();
-        let body = response.into_response().into_body();
-        let body = hyper::body::to_bytes(body).await.unwrap();
-        let body = String::from_utf8(body.to_vec()).unwrap();
+        let mut body = response.into_response().into_body();
 
+        let mut body_content = Vec::new();
+        while let Some(chunk) = body.next().await {
+            let chunk = chunk.unwrap();
+            body_content.extend_from_slice(&chunk);
+        }
+        let body = String::from_utf8(body_content).unwrap();
+
+        println!("Body content: {}", body);
         assert!(body.contains("reasoncode=INV-100"));
         assert!(body.contains("reasontext=Invalid username or password"));
         assert!(body.contains("reasonurl=https://winehq.com"));
