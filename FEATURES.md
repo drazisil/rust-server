@@ -25,25 +25,46 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
   - Logs non-HTTP requests for further processing.
   - Closes the connection after sending an HTTP response.
 
-### 3. **Configuration**
+### 3. **Shard Management**
+- **Purpose**: Manages shard data for the server.
+- **Data Structure**:
+  - `ShardListEntry`: Represents individual shard details.
+  - `ShardStatus`: Represents the status of a shard (e.g., healthy or offline).
+- **CRUD Operations**:
+  - `get_all_shards`: Retrieves all shards.
+  - `get_shard_by_id`: Retrieves a shard by its ID.
+  - `add_shard`: Adds a new shard.
+  - `update_shard`: Updates an existing shard.
+  - `delete_shard`: Deletes a shard by its ID.
+
+### 4. **Database Module**
+- **Purpose**: Centralized management of server data.
+- **Components**:
+  - `SHARD_DATABASE`: In-memory database for shard data.
+  - `AUTH_CREDENTIALS`: Stores valid authentication username and password.
+- **Encapsulation**:
+  - Provides CRUD-style methods to interact with shard data and authentication credentials.
+  - Prevents direct access to the underlying data structures from other modules.
+
+### 5. **Configuration**
 - **File**: Configuration is loaded from a `config.json` file.
 - **Structure**:
   - `tcp_ports`: A list of TCP ports the server listens on.
 - **Parsing**: Uses the `serde` crate for JSON deserialization.
 
-### 4. **Logging**
+### 6. **Logging**
 - **Framework**: `tracing` crate is used for structured logging.
 - **Output**:
   - Logs are written to both stdout and a daily rotating log file (`logs/server.log`).
 - **Levels**: Includes `info`, `warn`, and `error` levels for detailed tracing.
 
-### 5. **Error Tracking**
+### 7. **Error Tracking**
 - **Integration**: Sentry is integrated for error tracking and performance monitoring.
 - **Configuration**:
   - Sentry DSN is loaded from an environment variable (`SENTRY_DSN`).
   - Logs warnings if the DSN is missing or empty.
 
-### 6. **Graceful Shutdown**
+### 8. **Graceful Shutdown**
 - **Signal Handling**: Listens for `ctrl_c` signals to gracefully shut down the server.
 - **Logging**: Logs a shutdown message when the server stops.
 
@@ -88,28 +109,45 @@ The `/AuthLogin` endpoint validates user credentials provided via GET query para
 The `/ShardList` endpoint returns a list of available shards with detailed information about each shard.
 
 **Response:**
-- **200 OK**: A JSON array of shard list entries.
+- **200 OK**: A plain text list of shard details, formatted as key-value pairs for each shard.
 
-**Shard List Entry Structure:**
-```json
-{
-    "name": "string",
-    "description": "string",
-    "id": "number",
-    "loginServerIp": "string",
-    "loginServerPort": "number",
-    "lobbyServerIp": "string",
-    "lobbyServerPort": "number",
-    "mcotsServerIp": "string",
-    "statusId": "number",
-    "statusReason": "string",
-    "serverGroupName": "string",
-    "population": "number",
-    "maxPersonasPerUser": "number",
-    "diagnosticServerHost": "string",
-    "diagnosticServerPort": "number"
-}
+**Example Response:**
 ```
+[Shard1]
+Description=Primary shard
+ShardId=1
+LoginServerIP=192.168.1.1
+LoginServerPort=8080
+LobbyServerIp=192.168.1.2
+LobbyServerPort=8081
+MCOTSServerIP=192.168.1.3
+StatusId=
+Status_Reason=
+ServerGroup_Name=GroupA
+Population=100
+MaxPersonasPerUser=5
+DiagnosticServerHost=192.168.1.4
+DiagnosticServerPort=9090
+
+[Shard2]
+Description=Secondary shard
+ShardId=2
+LoginServerIP=192.168.1.5
+LoginServerPort=8082
+LobbyServerIp=192.168.1.6
+LobbyServerPort=8083
+MCOTSServerIP=192.168.1.7
+StatusId=2
+Status_Reason=Offline
+ServerGroup_Name=GroupB
+Population=50
+MaxPersonasPerUser=3
+DiagnosticServerHost=192.168.1.8
+DiagnosticServerPort=9091
+```
+
+**Note:**
+- The `StatusId` and `Status_Reason` fields in the shard entry are populated only if the shard is not healthy. For healthy shards, these fields are left blank.
 
 ### Default 404 Handler
 - **Request**:
