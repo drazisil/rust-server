@@ -68,10 +68,20 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
 - **Response**:
   - **Success**:
     - **Status Code**: `200 OK`
-    - **Body**: `"OK"`
+    - **Body**: 
+    ```
+    Valid=TRUE
+    Ticket=<auth_ticket>
+    ```
   - **Failure**:
     - **Status Code**: `401 Unauthorized`
-    - **Body**: `"Unauthorized"`
+    - **Body**: 
+    ```
+    reasoncode=<error_code>
+    reasontest=<error_text>
+    reasonurl=<error_url>
+    ```
+
 - **Response Format**: Both success and failure responses are returned in plain text.
 
 ### Default 404 Handler
