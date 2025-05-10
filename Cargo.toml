@@ -14,7 +14,7 @@ actix-service = "2.0"
 httparse = "1.8"
 warp = "0.3"
 hyper = "0.14"
-sentry = "0.27"
+sentry = { version = "0.27", features = ["tracing"] }
 sentry-actix = "0.27"
 dotenv = "0.15"
 tracing = "0.1"
