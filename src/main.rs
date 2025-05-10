@@ -8,6 +8,9 @@ use sentry::{ClientInitGuard, init};
 use sentry_actix::Sentry;
 use dotenv::dotenv;
 use std::env;
+use tracing::{info, warn, error};
+use tracing_subscriber;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
 
 #[derive(Deserialize)]
 struct Config {
@@ -36,7 +39,7 @@ async fn run_server() {
         let routes = routes.clone();
         tokio::spawn(async move {
             let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
-            println!("TCP server running on 0.0.0.0:{}", port);
+            info!("TCP server running on 0.0.0.0:{}", port);
 
             loop {
                 let (mut socket, _) = listener.accept().await.unwrap();
@@ -49,7 +52,7 @@ async fn run_server() {
                             if size > 0 {
                                 let request = String::from_utf8_lossy(&buffer[..size]);
                                 if request.starts_with("GET") || request.starts_with("POST") {
-                                    println!("HTTP request detected on port {}: {}", port, request);
+                                    info!("HTTP request detected on port {}: {}", port, request);
 
                                     if let Some(path) = request.lines().next().and_then(|line| line.split_whitespace().nth(1)) {
                                         let response = warp::test::request()
@@ -59,14 +62,14 @@ async fn run_server() {
 
                                         socket.write_all(response.body()).await.unwrap();
                                     } else {
-                                        eprintln!("Failed to parse HTTP request path");
+                                        error!("Failed to parse HTTP request path");
                                     }
                                 } else {
-                                    println!("Non-HTTP request received on port {}", port);
+                                    info!("Non-HTTP request received on port {}", port);
                                 }
                             }
                         }
-                        Err(e) => eprintln!("Failed to read from socket on port {}: {}", port, e),
+                        Err(e) => error!("Failed to read from socket on port {}: {}", port, e),
                     }
                 });
             }
@@ -75,23 +78,31 @@ async fn run_server() {
 
     // Wait for a termination signal to keep the runtime alive
     signal::ctrl_c().await.expect("Failed to listen for ctrl_c signal");
-    println!("Server shutting down...");
+    info!("Server shutting down...");
 }
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    let file_appender = tracing_appender::rolling::daily("logs", "server.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+
+    tracing_subscriber::fmt()
+        .with_writer(non_blocking.and(std::io::stdout))
+        .init();
+
     let dsn = env::var("SENTRY_DSN").ok();
 
     let _guard: Option<ClientInitGuard> = if let Some(dsn) = dsn {
         if !dsn.is_empty() {
             Some(init((dsn, sentry::ClientOptions::default())))
         } else {
-            eprintln!("Warning: SENTRY_DSN is empty. Sentry functionality is disabled.");
+            warn!("SENTRY_DSN is empty. Sentry functionality is disabled.");
             None
         }
     } else {
-        eprintln!("Warning: SENTRY_DSN not set. Sentry functionality is disabled.");
+        warn!("SENTRY_DSN not set. Sentry functionality is disabled.");
         None
     };
 

@@ -18,3 +18,4 @@ target/
 
 .env
 coverage/
+logs/
