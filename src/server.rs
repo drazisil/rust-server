@@ -66,9 +66,10 @@ pub async fn run_server(config: Config) {
                             if size > 0 {
                                 let request = String::from_utf8_lossy(&buffer[..size]);
                                 if request.starts_with("GET") || request.starts_with("POST") {
-                                    info!("HTTP request detected on port {}: {}", port, request);
-
                                     if let Some(path) = request.lines().next().and_then(|line| line.split_whitespace().nth(1)) {
+                                        let path_without_query: &str = path.split('?').next().unwrap_or(path);
+                                        info!("HTTP request detected on port {}: path={}", port, path_without_query);
+
                                         let response = warp::test::request()
                                             .path(path)
                                             .reply(&routes)
