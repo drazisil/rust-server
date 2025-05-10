@@ -4,33 +4,7 @@ use tokio::signal;
 use warp::Filter;
 use tracing::{info, error, span, Level};
 use crate::config::Config;
-
-#[derive(Debug)]
-pub struct AuthLoginSuccess {
-    pub ticket: String,
-}
-
-impl AuthLoginSuccess {
-    pub fn to_response(&self) -> String {
-        format!("Valid=TRUE\nTicket={}", self.ticket)
-    }
-}
-
-#[derive(Debug)]
-pub struct AuthLoginFailure {
-    pub reason_code: String,
-    pub reason_text: String,
-    pub reason_url: String,
-}
-
-impl AuthLoginFailure {
-    pub fn to_response(&self) -> String {
-        format!(
-            "reasoncode={}\nreasontest={}\nreasonurl={}",
-            self.reason_code, self.reason_text, self.reason_url
-        )
-    }
-}
+use crate::auth::{handle_auth_login, Database};
 
 pub async fn run_server(config: Config) {
     let span = span!(Level::INFO, "run_server");
@@ -39,29 +13,11 @@ pub async fn run_server(config: Config) {
     // Define the health check route
     let health_route = warp::path("health").map(|| "Server is running");
 
-    // Define the /AuthLogin route
-    let auth_login_route = warp::path("AuthLogin").and(warp::query::<std::collections::HashMap<String, String>>()).map(|query: std::collections::HashMap<String, String>| {
-        if let Some(ticket) = query.get("ticket") {
-            if ticket == "valid_ticket" {
-                let success_response = AuthLoginSuccess {
-                    ticket: "<auth_ticket>".to_string(),
-                };
-                return warp::reply::with_status(
-                    success_response.to_response(),
-                    warp::http::StatusCode::OK,
-                );
-            }
-        }
-        let failure_response = AuthLoginFailure {
-            reason_code: "<error_code>".to_string(),
-            reason_text: "<error_text>".to_string(),
-            reason_url: "<error_url>".to_string(),
-        };
-        warp::reply::with_status(
-            failure_response.to_response(),
-            warp::http::StatusCode::UNAUTHORIZED,
-        )
-    });
+    let db = Database;
+    let auth_login_route = warp::path("AuthLogin")
+        .and(warp::query::<std::collections::HashMap<String, String>>())
+        .and(warp::any().map(move || db.clone()))
+        .and_then(handle_auth_login);
 
     // Define a default 404 handler
     let not_found_route = warp::any().map(|| warp::reply::with_status("Not Found", warp::http::StatusCode::NOT_FOUND));

@@ -60,29 +60,27 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
   - **Status Code**: `200 OK`
   - **Body**: `"Server is running"`
 
-### `/AuthLogin`
-- **Request**:
-  - **Method**: `GET`
-  - **Headers**: None required
-  - **Body**: None
-- **Response**:
-  - **Success**:
-    - **Status Code**: `200 OK`
-    - **Body**: 
-    ```
-    Valid=TRUE
-    Ticket=<auth_ticket>
-    ```
-  - **Failure**:
-    - **Status Code**: `401 Unauthorized`
-    - **Body**: 
-    ```
-    reasoncode=<error_code>
-    reasontest=<error_text>
-    reasonurl=<error_url>
-    ```
+### `/AuthLogin` Endpoint
 
-- **Response Format**: Both success and failure responses are returned in plain text.
+**Description:**
+The `/AuthLogin` endpoint validates user credentials provided via GET query parameters.
+
+**Query Parameters:**
+- `username` (string): The username of the user.
+- `password` (string): The password of the user.
+
+**Responses:**
+- **200 OK**: If the credentials are valid.
+  ```
+  Valid=TRUE
+  Ticket=<auth_ticket>
+  ```
+- **401 Unauthorized**: If the credentials are invalid.
+  ```
+  reasoncode=INVALID_CREDENTIALS
+  reasontest=Invalid username or password
+  reasonurl=https://example.com/help
+  ```
 
 ### Default 404 Handler
 - **Request**:
