@@ -4,6 +4,10 @@ use tokio::signal;
 use serde::Deserialize;
 use std::fs;
 use warp::Filter;
+use sentry::{ClientInitGuard, init};
+use sentry_actix::Sentry;
+use dotenv::dotenv;
+use std::env;
 
 #[derive(Deserialize)]
 struct Config {
@@ -76,6 +80,22 @@ async fn run_server() {
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+    let dsn = env::var("SENTRY_DSN").ok();
+
+    let _guard: Option<ClientInitGuard> = if let Some(dsn) = dsn {
+        Some(init((dsn, sentry::ClientOptions::default())))
+    } else {
+        eprintln!("Warning: SENTRY_DSN not set. Sentry functionality is disabled.");
+        None
+    };
+
+    let _app = actix_web::App::new()
+        .wrap(Sentry::new())
+        .configure(|_cfg| {
+            // Configure your routes here
+        });
+
     run_server().await;
 }
 
