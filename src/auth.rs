@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use warp::http::StatusCode;
-use warp::reply;
+use warp::http::{Response, StatusCode};
 
 #[derive(Debug)]
 pub struct AuthLoginSuccess {
@@ -23,7 +22,7 @@ pub struct AuthLoginFailure {
 impl AuthLoginFailure {
     pub fn to_response(&self) -> String {
         format!(
-            "reasoncode={}\nreasontest={}\nreasonurl={}",
+            "reasoncode={}\nreasontext={}\nreasonurl={}",
             self.reason_code, self.reason_text, self.reason_url
         )
     }
@@ -38,7 +37,13 @@ pub async fn handle_auth_login(
             let success_response = AuthLoginSuccess {
                 ticket: "<auth_ticket>".to_string(),
             };
-            return Ok(reply::with_status(success_response.to_response(), StatusCode::OK));
+            return Ok(Response::builder()
+                .status(StatusCode::OK)
+                .version(warp::http::Version::HTTP_10)
+                .header("Connection", "close")
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .body(success_response.to_response())
+                .unwrap());
         }
     }
     let failure_response = AuthLoginFailure {
@@ -46,7 +51,13 @@ pub async fn handle_auth_login(
         reason_text: "Invalid username or password".to_string(),
         reason_url: "https://winehq.com".to_string(),
     };
-    Ok(reply::with_status(failure_response.to_response(), StatusCode::UNAUTHORIZED))
+    Ok(Response::builder()
+        .status(StatusCode::UNAUTHORIZED)
+        .version(warp::http::Version::HTTP_10)
+        .header("Connection", "close")
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(failure_response.to_response())
+        .unwrap())
 }
 
 #[derive(Clone)]

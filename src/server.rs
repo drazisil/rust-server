@@ -11,7 +11,14 @@ pub async fn run_server(config: Config) {
     let _enter = span.enter();
 
     // Define the health check route
-    let health_route = warp::path("health").map(|| "Server is running");
+    let health_route = warp::path("health").map(|| {
+        warp::http::Response::builder()
+            .status(warp::http::StatusCode::OK)
+            .version(warp::http::Version::HTTP_10)
+            .header("Connection", "close")
+            .body("Server is running")
+            .unwrap()
+    });
 
     let db = Database;
     let auth_login_route = warp::path("AuthLogin")
@@ -20,7 +27,14 @@ pub async fn run_server(config: Config) {
         .and_then(handle_auth_login);
 
     // Define a default 404 handler
-    let not_found_route = warp::any().map(|| warp::reply::with_status("Not Found", warp::http::StatusCode::NOT_FOUND));
+    let not_found_route = warp::any().map(|| {
+        warp::http::Response::builder()
+            .status(warp::http::StatusCode::NOT_FOUND)
+            .version(warp::http::Version::HTTP_10)
+            .header("Connection", "close")
+            .body("Not Found")
+            .unwrap()
+    });
 
     // Combine all routes
     let routes = health_route.or(auth_login_route).or(not_found_route);
@@ -60,7 +74,14 @@ pub async fn run_server(config: Config) {
                                             .reply(&routes)
                                             .await;
 
-                                        socket.write_all(response.body()).await.unwrap();
+                                        let http_response = format!(
+                                            "HTTP/1.0 {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                                            response.status(),
+                                            response.body().len(),
+                                            String::from_utf8_lossy(response.body())
+                                        );
+
+                                        socket.write_all(http_response.as_bytes()).await.unwrap();
                                         socket.shutdown().await.unwrap();
                                     } else {
                                         error!("Failed to parse HTTP request path");
