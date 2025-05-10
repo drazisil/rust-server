@@ -3,6 +3,7 @@ mod config;
 mod logging;
 mod server;
 mod shard_list;
+pub mod database;
 
 use config::Config;
 use logging::init_logging;
