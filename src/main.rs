@@ -84,7 +84,12 @@ async fn main() {
     let dsn = env::var("SENTRY_DSN").ok();
 
     let _guard: Option<ClientInitGuard> = if let Some(dsn) = dsn {
-        Some(init((dsn, sentry::ClientOptions::default())))
+        if !dsn.is_empty() {
+            Some(init((dsn, sentry::ClientOptions::default())))
+        } else {
+            eprintln!("Warning: SENTRY_DSN is empty. Sentry functionality is disabled.");
+            None
+        }
     } else {
         eprintln!("Warning: SENTRY_DSN not set. Sentry functionality is disabled.");
         None
