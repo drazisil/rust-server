@@ -66,8 +66,13 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
   - **Headers**: None required
   - **Body**: None
 - **Response**:
-  - **Status Code**: `200 OK`
-  - **Body**: `"OK"`
+  - **Success**:
+    - **Status Code**: `200 OK`
+    - **Body**: `"OK"`
+  - **Failure**:
+    - **Status Code**: `401 Unauthorized`
+    - **Body**: `"Unauthorized"`
+- **Response Format**: Both success and failure responses are returned in plain text.
 
 ### Default 404 Handler
 - **Request**:
