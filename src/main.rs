@@ -9,7 +9,7 @@ mod shard_list;
 pub mod database;
 mod admin;
 
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer};
 use crate::admin::admin_routes;
 use config::Config;
 use logging::init_logging;
