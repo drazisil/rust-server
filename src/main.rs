@@ -8,7 +8,7 @@ use sentry::{ClientInitGuard, init};
 use sentry_actix::Sentry;
 use dotenv::dotenv;
 use std::env;
-use tracing::{info, warn, error};
+use tracing::{info, warn, error, span, Level};
 use tracing_subscriber;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 
@@ -18,6 +18,9 @@ struct Config {
 }
 
 async fn run_server() {
+    let span = span!(Level::INFO, "run_server");
+    let _enter = span.enter();
+
     // Read the configuration file
     let config_data = fs::read_to_string("config.json").expect("Unable to read config file");
     let config: Config = serde_json::from_str(&config_data).expect("Invalid config format");
@@ -36,15 +39,24 @@ async fn run_server() {
 
     // Start the TCP server to forward requests to the Warp server
     for port in config.tcp_ports {
+        let span = span!(Level::INFO, "tcp_server", port = port);
+        let _enter = span.enter();
+
         let routes = routes.clone();
         tokio::spawn(async move {
             let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
             info!("TCP server running on 0.0.0.0:{}", port);
 
             loop {
+                let span = span!(Level::INFO, "connection_loop", port = port);
+                let _enter = span.enter();
+
                 let (mut socket, _) = listener.accept().await.unwrap();
                 let routes = routes.clone();
                 tokio::spawn(async move {
+                    let span = span!(Level::INFO, "handle_request", port = port);
+                    let _enter = span.enter();
+
                     let mut buffer = [0; 1024];
 
                     match socket.read(&mut buffer).await {
