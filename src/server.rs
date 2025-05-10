@@ -57,6 +57,7 @@ pub async fn run_server(config: Config) {
                                             .await;
 
                                         socket.write_all(response.body()).await.unwrap();
+                                        socket.shutdown().await.unwrap();
                                     } else {
                                         error!("Failed to parse HTTP request path");
                                     }
