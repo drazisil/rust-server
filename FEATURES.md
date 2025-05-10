@@ -45,7 +45,8 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
   - `AUTH_CREDENTIALS`: Stores valid authentication username and password.
 - **Encapsulation**:
   - Provides CRUD-style methods to interact with shard data and authentication credentials.
-  - **New**: Added transaction support for batch updates to shard data.
+  - **New**: All database calls using `sqlx` are now performed exclusively by the database module and exposed to other modules as abstracted CRUD commands.
+  - Added transaction support for batch updates to shard data.
   - Prevents direct access to the underlying data structures from other modules.
 
 ### 5. **Configuration**

@@ -102,6 +102,42 @@ pub async fn initialize_database() {
     MIGRATOR.get().unwrap().run(DB_POOL.get().unwrap()).await.expect("Failed to run migrations");
 }
 
+pub async fn get_all_shards() -> Result<Vec<ShardListEntry>, sqlx::Error> {
+    let pool = DB_POOL.get().expect("Database pool not initialized");
+    let shards = sqlx::query_as!(
+        ShardListEntry,
+        "SELECT id, name, description, login_server_ip, login_server_port, lobby_server_ip, lobby_server_port, mcots_server_ip, server_group_name, population, max_personas_per_user, diagnostic_server_host, diagnostic_server_port, status FROM shards"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(shards)
+}
+
+pub async fn insert_shard(shard: ShardListEntry) -> Result<(), sqlx::Error> {
+    let pool = DB_POOL.get().expect("Database pool not initialized");
+    sqlx::query!(
+        "INSERT INTO shards (name, description, login_server_ip, login_server_port, lobby_server_ip, lobby_server_port, mcots_server_ip, server_group_name, population, max_personas_per_user, diagnostic_server_host, diagnostic_server_port, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+        shard.name,
+        shard.description,
+        shard.login_server_ip,
+        shard.login_server_port,
+        shard.lobby_server_ip,
+        shard.lobby_server_port,
+        shard.mcots_server_ip,
+        shard.server_group_name,
+        shard.population,
+        shard.max_personas_per_user,
+        shard.diagnostic_server_host,
+        shard.diagnostic_server_port,
+        shard.status
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 impl ShardListEntry {
     pub fn get_all_shards() -> Vec<ShardListEntry> {
         let db = SHARD_DATABASE.lock().unwrap();
