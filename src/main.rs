@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod logging;
 mod server;
+mod shard_list;
 
 use config::Config;
 use logging::init_logging;

@@ -5,6 +5,7 @@ use warp::Filter;
 use tracing::{info, error, span, Level};
 use crate::config::Config;
 use crate::auth::{handle_auth_login, Database};
+use crate::shard_list::shard_list_filter;
 
 pub async fn run_server(config: Config) {
     let span = span!(Level::INFO, "run_server");
@@ -37,7 +38,7 @@ pub async fn run_server(config: Config) {
     });
 
     // Combine all routes
-    let routes = health_route.or(auth_login_route).or(not_found_route);
+    let routes = health_route.or(auth_login_route).or(shard_list_filter()).or(not_found_route);
 
     // Start the TCP server to forward requests to the Warp server
     for port in config.tcp_ports {
