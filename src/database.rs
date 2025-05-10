@@ -7,29 +7,26 @@ use serde::Serialize;
 use sqlx::{PgPool, migrate::Migrator};
 use once_cell::sync::OnceCell;
 use std::path::Path;
+use dotenv::dotenv;
+use std::env;
+use url::Url;
 
-#[derive(Serialize, Clone)]
-pub struct ShardStatus {
-    pub id: u8,
-    pub reason: String,
-}
-
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, sqlx::FromRow)]
 pub struct ShardListEntry {
+    pub id: i32,
     pub name: String,
     pub description: String,
-    pub id: u32,
     pub login_server_ip: String,
-    pub login_server_port: u16,
+    pub login_server_port: i32,
     pub lobby_server_ip: String,
-    pub lobby_server_port: u16,
+    pub lobby_server_port: i32,
     pub mcots_server_ip: String,
     pub server_group_name: String,
-    pub population: u32,
-    pub max_personas_per_user: u8,
+    pub population: i32,
+    pub max_personas_per_user: i32,
     pub diagnostic_server_host: String,
-    pub diagnostic_server_port: u16,
-    pub status: Option<ShardStatus>,
+    pub diagnostic_server_port: i32,
+    pub status: serde_json::Value,
 }
 
 lazy_static! {
@@ -48,7 +45,7 @@ lazy_static! {
             max_personas_per_user: 5,
             diagnostic_server_host: "192.168.1.4".to_string(),
             diagnostic_server_port: 9090,
-            status: None, // Healthy shard
+            status: serde_json::json!({}), // Healthy shard
         },
         ShardListEntry {
             name: "Shard2".to_string(),
@@ -64,26 +61,37 @@ lazy_static! {
             max_personas_per_user: 3,
             diagnostic_server_host: "192.168.1.8".to_string(),
             diagnostic_server_port: 9091,
-            status: Some(ShardStatus {
-                id: 2,
-                reason: "Offline".to_string(),
+            status: serde_json::json!({
+                "id": 2,
+                "reason": "Offline"
             }),
         },
     ]));
 
     pub static ref AUTH_CREDENTIALS: Arc<Mutex<(String, String)>> = Arc::new(Mutex::new((
-        "admin".to_string(),
-        "password123".to_string(),
+        "postgres".to_string(),
+        "password".to_string(),
     )));
 }
 
-static DB_POOL: OnceCell<PgPool> = OnceCell::new();
+pub static DB_POOL: OnceCell<PgPool> = OnceCell::new();
 static MIGRATOR: OnceCell<Migrator> = OnceCell::new();
 
 pub async fn initialize_database() {
-    let pool = PgPool::connect(&std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
-        .await
-        .expect("Failed to connect to the database");
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    // Parse the database URL to extract username and password
+    let parsed_url = Url::parse(&database_url).expect("Invalid DATABASE_URL format");
+    let username = parsed_url.username().to_string();
+    let password = parsed_url.password().unwrap_or("").to_string();
+
+    // Update the AUTH_CREDENTIALS with the parsed username and password
+    AUTH_CREDENTIALS.lock().unwrap().0 = username;
+    AUTH_CREDENTIALS.lock().unwrap().1 = password;
+
+    let pool = PgPool::connect(&database_url).await.expect("Failed to create pool");
     DB_POOL.set(pool).expect("Failed to set DB_POOL");
 
     let migrator = Migrator::new(Path::new("migrations"))
@@ -102,7 +110,7 @@ impl ShardListEntry {
 
     pub fn get_shard_by_id(id: u32) -> Option<ShardListEntry> {
         let db = SHARD_DATABASE.lock().unwrap();
-        db.iter().find(|shard| shard.id == id).cloned()
+        db.iter().find(|shard| shard.id == id as i32).cloned()
     }
 
     pub fn add_shard(shard: ShardListEntry) {
@@ -112,7 +120,7 @@ impl ShardListEntry {
 
     pub fn update_shard(id: u32, updated_shard: ShardListEntry) -> bool {
         let mut db = SHARD_DATABASE.lock().unwrap();
-        if let Some(shard) = db.iter_mut().find(|shard| shard.id == id) {
+        if let Some(shard) = db.iter_mut().find(|shard| shard.id == id as i32) {
             *shard = updated_shard;
             true
         } else {
@@ -122,7 +130,7 @@ impl ShardListEntry {
 
     pub fn delete_shard(id: u32) -> bool {
         let mut db = SHARD_DATABASE.lock().unwrap();
-        if let Some(pos) = db.iter().position(|shard| shard.id == id) {
+        if let Some(pos) = db.iter().position(|shard| shard.id == id as i32) {
             db.remove(pos);
             true
         } else {

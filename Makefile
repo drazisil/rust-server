@@ -25,6 +25,10 @@ coverage: # Generate HTML and Cobertura coverage reports
 install-tarpaulin: # Install cargo-tarpaulin
 	cargo install cargo-tarpaulin
 
+.PHONY: migrate
+migrate: # Run database migrations
+	cargo sqlx migrate run
+
 .PHONY: help
 help: # Show this help message
 	@echo "Available targets:"

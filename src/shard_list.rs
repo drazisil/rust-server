@@ -11,10 +11,8 @@ pub fn shard_list_filter() -> warp::http::Response<String> {
     let plain_text = shard_list
         .iter()
         .map(|entry| {
-            let (status_id, status_reason) = match &entry.status {
-                Some(status) => (status.id.to_string(), status.reason.clone()),
-                None => ("".to_string(), "".to_string()),
-            };
+            let status_id = entry.status["id"].to_string();
+            let status_reason = entry.status["reason"].to_string();
 
             format!(
                 "[{}]\nDescription={}\nShardId={}\nLoginServerIP={}\nLoginServerPort={}\nLobbyServerIp={}\nLobbyServerPort={}\nMCOTSServerIP={}\nStatusId={}\nStatus_Reason={}\nServerGroup_Name={}\nPopulation={}\nMaxPersonasPerUser={}\nDiagnosticServerHost={}\nDiagnosticServerPort={}\n",
