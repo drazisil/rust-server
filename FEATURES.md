@@ -43,6 +43,7 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
 - **Components**:
   - `SHARD_DATABASE`: In-memory database for shard data.
   - `AUTH_CREDENTIALS`: Stores valid authentication username and password.
+  - `DB_POOL`: A global connection pool for PostgreSQL, initialized using `sqlx`.
 - **Encapsulation**:
   - Provides CRUD-style methods to interact with shard data and authentication credentials.
   - **New**: All database calls using `sqlx` are now performed exclusively by the database module and exposed to other modules as abstracted CRUD commands.
@@ -76,6 +77,9 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
 - **Endpoints**:
   - `/admin/reload-config`: Reloads the server configuration from `config.json` without restarting the server.
   - `/admin/shard-stats`: Returns statistics about shard usage and health.
+  - `/admin/shards`:
+    - **GET**: Retrieves all shards by calling the `get_all_shards` function from the database module.
+    - **POST**: Adds a new shard by calling the `insert_shard` function from the database module.
 - **Authentication**: Requires admin credentials for access.
 - **Logging**: Logs all admin actions for auditing purposes.
 
