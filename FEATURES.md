@@ -82,6 +82,35 @@ The `/AuthLogin` endpoint validates user credentials provided via GET query para
   reasonurl=<dynamic_reason_url>
   ```
 
+### `/ShardList` Endpoint
+
+**Description:**
+The `/ShardList` endpoint returns a list of available shards with detailed information about each shard.
+
+**Response:**
+- **200 OK**: A JSON array of shard list entries.
+
+**Shard List Entry Structure:**
+```json
+{
+    "name": "string",
+    "description": "string",
+    "id": "number",
+    "loginServerIp": "string",
+    "loginServerPort": "number",
+    "lobbyServerIp": "string",
+    "lobbyServerPort": "number",
+    "mcotsServerIp": "string",
+    "statusId": "number",
+    "statusReason": "string",
+    "serverGroupName": "string",
+    "population": "number",
+    "maxPersonasPerUser": "number",
+    "diagnosticServerHost": "string",
+    "diagnosticServerPort": "number"
+}
+```
+
 ### Default 404 Handler
 - **Request**:
   - Any undefined path.
