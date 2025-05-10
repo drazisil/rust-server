@@ -4,6 +4,9 @@
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
 use serde::Serialize;
+use sqlx::{PgPool, migrate::Migrator};
+use once_cell::sync::OnceCell;
+use std::path::Path;
 
 #[derive(Serialize, Clone)]
 pub struct ShardStatus {
@@ -72,6 +75,23 @@ lazy_static! {
         "admin".to_string(),
         "password123".to_string(),
     )));
+}
+
+static DB_POOL: OnceCell<PgPool> = OnceCell::new();
+static MIGRATOR: OnceCell<Migrator> = OnceCell::new();
+
+pub async fn initialize_database() {
+    let pool = PgPool::connect(&std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
+        .await
+        .expect("Failed to connect to the database");
+    DB_POOL.set(pool).expect("Failed to set DB_POOL");
+
+    let migrator = Migrator::new(Path::new("migrations"))
+        .await
+        .expect("Failed to load migrations");
+    MIGRATOR.set(migrator).expect("Failed to set MIGRATOR");
+
+    MIGRATOR.get().unwrap().run(DB_POOL.get().unwrap()).await.expect("Failed to run migrations");
 }
 
 impl ShardListEntry {
