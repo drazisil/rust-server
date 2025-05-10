@@ -21,6 +21,10 @@ coverage: # Generate HTML and Cobertura coverage reports
 	mkdir -p coverage
 	cargo tarpaulin --out Html --out Xml --output-dir coverage
 
+.PHONY: install-tarpaulin
+install-tarpaulin: # Install cargo-tarpaulin
+	cargo install cargo-tarpaulin
+
 .PHONY: help
 help: # Show this help message
 	@echo "Available targets:"

@@ -21,5 +21,8 @@ jobs:
       with:
         toolchain: stable
 
+    - name: Install cargo-tarpaulin
+      run: make install-tarpaulin
+
     - name: Run tests with coverage
       run: make coverage
