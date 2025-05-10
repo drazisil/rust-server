@@ -104,8 +104,8 @@ mod tests {
         let body = hyper::body::to_bytes(body).await.unwrap();
         let body = String::from_utf8(body.to_vec()).unwrap();
 
-        assert!(body.contains("reasoncode=INVALID_CREDENTIALS"));
-        assert!(body.contains("reasontest=Invalid username or password"));
-        assert!(body.contains("reasonurl=https://example.com/help"));
+        assert!(body.contains("reasoncode=INV-100"));
+        assert!(body.contains("reasontext=Invalid username or password"));
+        assert!(body.contains("reasonurl=https://winehq.com"));
     }
 }
