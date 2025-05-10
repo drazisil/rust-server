@@ -36,6 +36,7 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
   - `add_shard`: Adds a new shard.
   - `update_shard`: Updates an existing shard.
   - `delete_shard`: Deletes a shard by its ID.
+  - **New**: Added support for filtering shards by status and group.
 
 ### 4. **Database Module**
 - **Purpose**: Centralized management of server data.
@@ -44,6 +45,7 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
   - `AUTH_CREDENTIALS`: Stores valid authentication username and password.
 - **Encapsulation**:
   - Provides CRUD-style methods to interact with shard data and authentication credentials.
+  - **New**: Added transaction support for batch updates to shard data.
   - Prevents direct access to the underlying data structures from other modules.
 
 ### 5. **Configuration**
@@ -67,6 +69,14 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
 ### 8. **Graceful Shutdown**
 - **Signal Handling**: Listens for `ctrl_c` signals to gracefully shut down the server.
 - **Logging**: Logs a shutdown message when the server stops.
+
+### 9. **Admin Module**
+- **Purpose**: Provides administrative endpoints for server management.
+- **Endpoints**:
+  - `/admin/reload-config`: Reloads the server configuration from `config.json` without restarting the server.
+  - `/admin/shard-stats`: Returns statistics about shard usage and health.
+- **Authentication**: Requires admin credentials for access.
+- **Logging**: Logs all admin actions for auditing purposes.
 
 ---
 
