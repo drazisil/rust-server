@@ -49,6 +49,35 @@ This Rust-based server project provides both TCP and HTTP server capabilities. I
 
 ---
 
+## HTTP Path Documentation
+
+### `/health`
+- **Request**:
+  - **Method**: `GET`
+  - **Headers**: None required
+  - **Body**: None
+- **Response**:
+  - **Status Code**: `200 OK`
+  - **Body**: `"Server is running"`
+
+### `/AuthLogin`
+- **Request**:
+  - **Method**: `GET`
+  - **Headers**: None required
+  - **Body**: None
+- **Response**:
+  - **Status Code**: `200 OK`
+  - **Body**: `"OK"`
+
+### Default 404 Handler
+- **Request**:
+  - Any undefined path.
+- **Response**:
+  - **Status Code**: `404 Not Found`
+  - **Body**: `"Not Found"`
+
+---
+
 ## Current Behavior
 1. **Startup**:
    - Initializes logging and Sentry error tracking.
