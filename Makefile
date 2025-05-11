@@ -5,8 +5,9 @@
 all: build # Default target to build the project
 
 .PHONY: build
-build: # Compile the Rust code
-	cargo build
+build: # Compile the Rust code using Docker
+	docker build -t rust-ci .
+	docker run --env-file .env rust-ci
 
 .PHONY: test
 test: # Run all test cases
@@ -17,9 +18,10 @@ clean: # Remove build artifacts
 	cargo clean
 
 .PHONY: coverage
-coverage: # Generate HTML and Cobertura coverage reports
+coverage: # Generate HTML and Cobertura coverage reports using Docker
 	mkdir -p coverage
-	cargo tarpaulin --out Html --out Xml --output-dir coverage
+	docker run --env-file .env rust-ci cargo tarpaulin --out Html --out Xml --output-dir coverage
+	docker cp $(shell docker ps -lq):/app/coverage ./coverage
 
 .PHONY: install-tarpaulin
 install-tarpaulin: # Install cargo-tarpaulin
