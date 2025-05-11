@@ -2,3 +2,4 @@
 // See the COPYING.md file in the project root for more information.
 
 pub mod database;
+pub mod auth;
