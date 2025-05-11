@@ -10,7 +10,8 @@ use crate::config::Config;
 use crate::auth::{handle_auth_login, Database};
 use crate::shard_list::shard_list_filter;
 
-fn create_response(status: warp::http::StatusCode, body: &str) -> warp::http::Response<String> {
+// Extracted pure function for creating HTTP responses
+pub fn create_response(status: warp::http::StatusCode, body: &str) -> warp::http::Response<String> {
     warp::http::Response::builder()
         .status(status)
         .version(warp::http::Version::HTTP_10)
