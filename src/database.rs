@@ -102,16 +102,23 @@ pub async fn initialize_database() {
     MIGRATOR.get().unwrap().run(DB_POOL.get().unwrap()).await.expect("Failed to run migrations");
 }
 
+pub fn construct_get_all_shards_query() -> &'static str {
+    "SELECT id, name, description, login_server_ip, login_server_port, lobby_server_ip, lobby_server_port, mcots_server_ip, server_group_name, population, max_personas_per_user, diagnostic_server_host, diagnostic_server_port, status FROM shards"
+}
+
+pub fn process_shard_results(results: Vec<ShardListEntry>) -> Vec<ShardListEntry> {
+    results.into_iter().map(|shard| shard).collect()
+}
+
 pub async fn get_all_shards() -> Result<Vec<ShardListEntry>, sqlx::Error> {
     let pool = DB_POOL.get().expect("Database pool not initialized");
-    let shards = sqlx::query_as!(
+    let results = sqlx::query_as!(
         ShardListEntry,
         "SELECT id, name, description, login_server_ip, login_server_port, lobby_server_ip, lobby_server_port, mcots_server_ip, server_group_name, population, max_personas_per_user, diagnostic_server_host, diagnostic_server_port, status FROM shards"
     )
     .fetch_all(pool)
     .await?;
-
-    Ok(shards)
+    Ok(process_shard_results(results))
 }
 
 pub async fn insert_shard(shard: ShardListEntry) -> Result<(), sqlx::Error> {

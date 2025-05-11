@@ -41,35 +41,44 @@ impl UserValidator for Database {
     }
 }
 
+pub fn generate_success_response(ticket: &str) -> String {
+    format!("Valid=TRUE\nTicket={}", ticket)
+}
+
+pub fn generate_failure_response(reason_code: &str, reason_text: &str, reason_url: &str) -> String {
+    format!(
+        "reasoncode={}\nreasontext={}\nreasonurl={}",
+        reason_code, reason_text, reason_url
+    )
+}
+
 pub async fn handle_auth_login<V: UserValidator + 'static>(
     query: HashMap<String, String>,
     db: V,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     if let (Some(username), Some(password)) = (query.get("username"), query.get("password")) {
         if db.validate_user(username, password) {
-            let success_response = AuthLoginSuccess {
-                ticket: "<auth_ticket>".to_string(),
-            };
+            let response_body = generate_success_response("<auth_ticket>");
             return Ok(Response::builder()
                 .status(StatusCode::OK)
                 .version(warp::http::Version::HTTP_10)
                 .header("Connection", "close")
                 .header("Content-Type", "text/plain; charset=utf-8")
-                .body(success_response.to_response())
+                .body(response_body)
                 .unwrap());
         }
     }
-    let failure_response = AuthLoginFailure {
-        reason_code: "INV-100".to_string(),
-        reason_text: "Invalid username or password".to_string(),
-        reason_url: "https://winehq.com".to_string(),
-    };
+    let response_body = generate_failure_response(
+        "INV-100",
+        "Invalid username or password",
+        "https://winehq.com",
+    );
     Ok(Response::builder()
         .status(StatusCode::UNAUTHORIZED)
         .version(warp::http::Version::HTTP_10)
         .header("Connection", "close")
         .header("Content-Type", "text/plain; charset=utf-8")
-        .body(failure_response.to_response())
+        .body(response_body)
         .unwrap())
 }
 
