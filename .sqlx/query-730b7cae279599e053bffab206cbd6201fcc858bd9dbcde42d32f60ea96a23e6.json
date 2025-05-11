@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO shards (name, description, login_server_ip, login_server_port, lobby_server_ip, lobby_server_port, mcots_server_ip, server_group_name, population, max_personas_per_user, diagnostic_server_host, diagnostic_server_port, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text",
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "730b7cae279599e053bffab206cbd6201fcc858bd9dbcde42d32f60ea96a23e6"
+}
