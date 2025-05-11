@@ -31,12 +31,22 @@ impl AuthLoginFailure {
     }
 }
 
-pub async fn handle_auth_login(
+pub trait UserValidator: Send + Sync {
+    fn validate_user(&self, username: &str, password: &str) -> bool;
+}
+
+impl UserValidator for Database {
+    fn validate_user(&self, username: &str, password: &str) -> bool {
+        username == "valid_user" && password == "valid_password"
+    }
+}
+
+pub async fn handle_auth_login<V: UserValidator + 'static>(
     query: HashMap<String, String>,
-    db: Database,
+    db: V,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     if let (Some(username), Some(password)) = (query.get("username"), query.get("password")) {
-        if db.validate_user(username, password).await {
+        if db.validate_user(username, password) {
             let success_response = AuthLoginSuccess {
                 ticket: "<auth_ticket>".to_string(),
             };
@@ -66,13 +76,6 @@ pub async fn handle_auth_login(
 #[derive(Clone)]
 pub struct Database;
 
-impl Database {
-    pub async fn validate_user(&self, username: &str, password: &str) -> bool {
-        // Replace with actual database validation logic
-        username == "valid_user" && password == "valid_password"
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,13 +83,22 @@ mod tests {
     use warp::Reply;
     use futures::StreamExt;
 
+    #[derive(Clone)]
+    struct MockDatabase;
+
+    impl UserValidator for MockDatabase {
+        fn validate_user(&self, username: &str, password: &str) -> bool {
+            username == "valid_user" && password == "valid_password"
+        }
+    }
+
     #[tokio::test]
     async fn test_handle_auth_login_success() {
         let mut query = HashMap::new();
         query.insert("username".to_string(), "valid_user".to_string());
         query.insert("password".to_string(), "valid_password".to_string());
 
-        let db = Database;
+        let db = MockDatabase;
         let response = handle_auth_login(query, db).await.unwrap();
         let mut body = response.into_response().into_body();
 
@@ -108,7 +120,7 @@ mod tests {
         query.insert("username".to_string(), "invalid_user".to_string());
         query.insert("password".to_string(), "wrong_password".to_string());
 
-        let db = Database;
+        let db = MockDatabase;
         let response = handle_auth_login(query, db).await.unwrap();
         let mut body = response.into_response().into_body();
 
