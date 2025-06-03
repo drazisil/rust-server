@@ -1,7 +1,12 @@
 // src/types/tcp.ts
 import { parseTlsHandshakePayload, TlsHandshakePayload } from './tls';
+import { parseSsl2HandshakePayload, Ssl2HandshakePayload } from './ssl2';
 
 export function detectProtocol(buf: Buffer): string {
+    // SSL 2.0 handshake starts with 0x80 (first byte has MSB set)
+    if (buf.length > 2 && (buf[0] & 0x80) === 0x80) {
+        return 'SSL2';
+    }
     // SSL 3.0 handshake starts with 0x16 0x03 0x00
     if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && buf[2] === 0x00) {
         return 'SSL3';
@@ -23,14 +28,22 @@ export function detectProtocol(buf: Buffer): string {
     return 'Unknown';
 }
 
-export function parsePayload(hex: string | Buffer): { protocol: string; payload: Buffer; tls?: TlsHandshakePayload } {
+export function parsePayload(hex: string | Buffer): {
+    protocol: string;
+    payload: Buffer;
+    tls?: TlsHandshakePayload;
+    ssl2?: Ssl2HandshakePayload;
+} {
     const buf = typeof hex === 'string' ? Buffer.from(hex, 'hex') : hex;
     const protocol = detectProtocol(buf);
     let tls: TlsHandshakePayload | undefined = undefined;
+    let ssl2: Ssl2HandshakePayload | undefined = undefined;
     if (protocol === 'TLS') {
         tls = parseTlsHandshakePayload(buf) || undefined;
+    } else if (protocol === 'SSL2') {
+        ssl2 = parseSsl2HandshakePayload(buf) || undefined;
     }
-    return { protocol, payload: buf, tls };
+    return { protocol, payload: buf, tls, ssl2 };
 }
 
 export interface SshPayload {
