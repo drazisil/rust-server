@@ -3,6 +3,7 @@ import net from 'net';
 import { HOST, PORTS } from './config';
 import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './types';
 import { addUser, checkCredentials } from './auth/checkCredentials';
+import { Sequelize, DataTypes, Model } from 'sequelize';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -31,6 +32,32 @@ async function pingAll() {
         console.log(`Port ${port}: ${isOpen ? 'OPEN' : 'CLOSED'}`);
     }
 }
+
+// Re-create the User model for CLI access
+const sequelize = new Sequelize('sqlite:' + __dirname + '/auth/users.sqlite', { logging: false });
+class User extends Model {
+    declare username: string;
+    declare passwordHash: string;
+}
+User.init(
+    {
+        username: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+            allowNull: false,
+        },
+        passwordHash: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+    },
+    {
+        sequelize,
+        modelName: 'User',
+        tableName: 'users',
+        timestamps: false,
+    }
+);
 
 const [,, cmd, ...args] = process.argv;
 
@@ -67,6 +94,17 @@ if (cmd === 'ping') {
             console.log(`Credentials for '${username}' are INVALID.`);
         }
     });
+} else if (cmd === 'listusers') {
+    (async () => {
+        await sequelize.sync();
+        const users = await User.findAll({ attributes: ['username'] });
+        if (users.length === 0) {
+            console.log('No users found.');
+        } else {
+            console.log('Users:');
+            users.forEach((u: any) => console.log(' -', u.username));
+        }
+    })();
 } else {
     console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> | checkuser <username> <password>');
 }
