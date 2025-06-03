@@ -2,6 +2,7 @@
 import net from 'net';
 import { HOST, PORTS } from './config';
 import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './types';
+import { addUser, checkCredentials } from './auth/checkCredentials';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -46,6 +47,26 @@ if (cmd === 'ping') {
             console.error('Failed to parse payload:', e);
         }
     }
+} else if (cmd === 'adduser' && args[0] && args[1]) {
+    const username = args[0];
+    const password = args[1];
+    addUser(username, password).then((success) => {
+        if (success) {
+            console.log(`User '${username}' added successfully.`);
+        } else {
+            console.error(`Failed to add user '${username}'. User may already exist or input is invalid.`);
+        }
+    });
+} else if (cmd === 'checkuser' && args[0] && args[1]) {
+    const username = args[0];
+    const password = args[1];
+    checkCredentials(username, password).then((valid) => {
+        if (valid) {
+            console.log(`Credentials for '${username}' are valid.`);
+        } else {
+            console.log(`Credentials for '${username}' are INVALID.`);
+        }
+    });
 } else {
-    console.log('Usage: admin-cli.ts ping | parse <hexstring>');
+    console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> | checkuser <username> <password>');
 }
