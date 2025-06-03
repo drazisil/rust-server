@@ -12,8 +12,8 @@ function createServer(port: number) {
         logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client connected');
 
         socket.on('data', (data: Buffer) => {
-            const { protocol, payload } = parsePayload(data);
-            logger.info(getParsedPayloadLogObject({ port, protocol, payload }), 'Message received');
+            const { protocol, payload, tls, ssl3 } = parsePayload(data);
+            logger.info(getParsedPayloadLogObject({ port, protocol, payload, tls, ssl3 }), 'Message received');
             // Broadcast the message to all clients
             clients.forEach((client) => {
                 if (client !== socket) {

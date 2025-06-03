@@ -2,8 +2,12 @@
 import { parseTlsHandshakePayload, TlsHandshakePayload } from './tls';
 
 export function detectProtocol(buf: Buffer): string {
-    // TLS handshake (ClientHello) usually starts with 0x16 0x03 0x01 or 0x16 0x03 0x03
-    if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && (buf[2] === 0x00 || buf[2] === 0x01 || buf[2] === 0x02 || buf[2] === 0x03 || buf[2] === 0x04)) {
+    // SSL 3.0 handshake starts with 0x16 0x03 0x00
+    if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && buf[2] === 0x00) {
+        return 'SSL3';
+    }
+    // TLS handshake (ClientHello) usually starts with 0x16 0x03 0x01 - 0x16 0x03 0x04
+    if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && (buf[2] === 0x01 || buf[2] === 0x02 || buf[2] === 0x03 || buf[2] === 0x04)) {
         return 'TLS';
     }
     // HTTP request (GET/POST/...) in ASCII
