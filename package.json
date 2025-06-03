@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "dev": "ts-node src/server.ts"
+    "dev": "ts-node src/server.ts",
+    "admin": "ts-node src/admin-cli.ts"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
