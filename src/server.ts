@@ -12,10 +12,18 @@ function createServer(port: number) {
 
         socket.on('data', (data: Buffer) => {
             const msg = data.toString().trim();
-            logger.info({ port, msg }, 'Message received');
+            // Detect protocol using the parser
+            let protocol: string | undefined = undefined;
+            try {
+                const { protocol: detectedProtocol } = require('./types/tcp').parseTcpHeader(data.toString('hex'));
+                protocol = detectedProtocol;
+            } catch {
+                protocol = undefined;
+            }
+            logger.info({ port, msg, protocol }, 'Message received');
             // Log raw packet data for port 443
             if (port === 443) {
-                logger.info({ port, raw: data.toString('hex') }, 'Raw packet received on port 443');
+                logger.info({ port, raw: data.toString('hex'), protocol }, 'Raw packet received on port 443');
             }
             // Broadcast the message to all clients
             clients.forEach((client) => {

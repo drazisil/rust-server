@@ -1,6 +1,7 @@
 #!/usr/bin/env ts-node
 import net from 'net';
 import { HOST, PORTS } from './config';
+import { parseTcpHeader } from './types/tcp';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -30,10 +31,21 @@ async function pingAll() {
     }
 }
 
-const [,, cmd] = process.argv;
+const [,, cmd, ...args] = process.argv;
 
 if (cmd === 'ping') {
     pingAll();
+} else if (cmd === 'parse' && args[0]) {
+    try {
+        const header = parseTcpHeader(args[0]);
+        console.log('Parsed TCP Header:', JSON.stringify(header, null, 2));
+    } catch (e) {
+        if (e instanceof Error) {
+            console.error('Failed to parse TCP header:', e.message);
+        } else {
+            console.error('Failed to parse TCP header:', e);
+        }
+    }
 } else {
-    console.log('Usage: admin-cli.ts ping');
+    console.log('Usage: admin-cli.ts ping | parse <hexstring>');
 }
