@@ -2,7 +2,7 @@
 import net from 'net';
 import { HOST, PORTS } from './config';
 import { parsePayload } from './types/tcp';
-import { parseTlsHandshakePayload } from './types/tls';
+import { logParsedPayload } from './types';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -39,17 +39,7 @@ if (cmd === 'ping') {
 } else if (cmd === 'parse' && args[0]) {
     try {
         const { protocol, payload } = parsePayload(args[0]);
-        console.log('Detected Protocol:', protocol);
-        console.log('Payload (hex):', payload.toString('hex'));
-        console.log('Payload (ascii):', payload.toString('ascii'));
-        if (protocol === 'TLS') {
-            const tls = parseTlsHandshakePayload(payload);
-            if (tls) {
-                console.log('TLS Handshake Payload:', JSON.stringify(tls, null, 2));
-            } else {
-                console.log('Could not parse TLS handshake payload.');
-            }
-        }
+        logParsedPayload({ protocol, payload });
     } catch (e) {
         if (e instanceof Error) {
             console.error('Failed to parse payload:', e.message);

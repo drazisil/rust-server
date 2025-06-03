@@ -3,7 +3,7 @@ import * as net from 'net';
 import { HOST, PORTS } from './config';
 import { logger } from './logger';
 import { parsePayload } from './types/tcp';
-import { parseTlsHandshakePayload } from './types/tls';
+import { getParsedPayloadLogObject } from './types';
 
 const clients: net.Socket[] = [];
 
@@ -14,15 +14,7 @@ function createServer(port: number) {
 
         socket.on('data', (data: Buffer) => {
             const { protocol, payload } = parsePayload(data);
-            logger.info({ port, protocol, payloadHex: payload.toString('hex'), payloadAscii: payload.toString('ascii') }, 'Message received');
-            if (protocol === 'TLS') {
-                const tls = parseTlsHandshakePayload(payload);
-                if (tls) {
-                    logger.info({ port, tls }, 'Parsed TLS handshake payload');
-                } else {
-                    logger.warn({ port }, 'Could not parse TLS handshake payload');
-                }
-            }
+            logger.info(getParsedPayloadLogObject({ port, protocol, payload }), 'Message received');
             // Broadcast the message to all clients
             clients.forEach((client) => {
                 if (client !== socket) {
