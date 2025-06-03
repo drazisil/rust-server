@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 import net from 'net';
 import { HOST, PORTS } from './config';
-import { parsePayload, parseSshPayload } from './types/tcp';
+import { parsePayload, parseTlsHandshakePayload } from './types/tcp';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -41,12 +41,12 @@ if (cmd === 'ping') {
         console.log('Detected Protocol:', protocol);
         console.log('Payload (hex):', payload.toString('hex'));
         console.log('Payload (ascii):', payload.toString('ascii'));
-        if (protocol === 'SSH') {
-            const ssh = parseSshPayload(payload);
-            if (ssh) {
-                console.log('SSH Payload:', JSON.stringify(ssh, null, 2));
+        if (protocol === 'TLS') {
+            const tls = parseTlsHandshakePayload(payload);
+            if (tls) {
+                console.log('TLS Handshake Payload:', JSON.stringify(tls, null, 2));
             } else {
-                console.log('Could not parse SSH payload.');
+                console.log('Could not parse TLS handshake payload.');
             }
         }
     } catch (e) {

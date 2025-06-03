@@ -2,7 +2,7 @@
 import * as net from 'net';
 import { HOST, PORTS } from './config';
 import { logger } from './logger';
-import { parsePayload, parseSshPayload } from './types/tcp';
+import { parsePayload, parseTlsHandshakePayload } from './types/tcp';
 
 const clients: net.Socket[] = [];
 
@@ -14,12 +14,12 @@ function createServer(port: number) {
         socket.on('data', (data: Buffer) => {
             const { protocol, payload } = parsePayload(data);
             logger.info({ port, protocol, payloadHex: payload.toString('hex'), payloadAscii: payload.toString('ascii') }, 'Message received');
-            if (protocol === 'SSH') {
-                const ssh = parseSshPayload(payload);
-                if (ssh) {
-                    logger.info({ port, ssh }, 'Parsed SSH payload');
+            if (protocol === 'TLS') {
+                const tls = parseTlsHandshakePayload(payload);
+                if (tls) {
+                    logger.info({ port, tls }, 'Parsed TLS handshake payload');
                 } else {
-                    logger.warn({ port }, 'Could not parse SSH payload');
+                    logger.warn({ port }, 'Could not parse TLS handshake payload');
                 }
             }
             // Broadcast the message to all clients
