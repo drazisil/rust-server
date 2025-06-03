@@ -2,6 +2,7 @@
 import * as net from 'net';
 import { HOST, PORTS } from './config';
 import { logger } from './logger';
+import { parsePayload, parseSshPayload } from './types/tcp';
 
 const clients: net.Socket[] = [];
 
@@ -11,24 +12,20 @@ function createServer(port: number) {
         logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client connected');
 
         socket.on('data', (data: Buffer) => {
-            const msg = data.toString().trim();
-            // Detect protocol using the parser
-            let protocol: string | undefined = undefined;
-            try {
-                const { protocol: detectedProtocol } = require('./types/tcp').parseTcpHeader(data.toString('hex'));
-                protocol = detectedProtocol;
-            } catch {
-                protocol = undefined;
-            }
-            logger.info({ port, msg, protocol }, 'Message received');
-            // Log raw packet data for port 443
-            if (port === 443) {
-                logger.info({ port, raw: data.toString('hex'), protocol }, 'Raw packet received on port 443');
+            const { protocol, payload } = parsePayload(data);
+            logger.info({ port, protocol, payloadHex: payload.toString('hex'), payloadAscii: payload.toString('ascii') }, 'Message received');
+            if (protocol === 'SSH') {
+                const ssh = parseSshPayload(payload);
+                if (ssh) {
+                    logger.info({ port, ssh }, 'Parsed SSH payload');
+                } else {
+                    logger.warn({ port }, 'Could not parse SSH payload');
+                }
             }
             // Broadcast the message to all clients
             clients.forEach((client) => {
                 if (client !== socket) {
-                    client.write(msg + '\n');
+                    client.write(payload + '\n');
                 }
             });
         });

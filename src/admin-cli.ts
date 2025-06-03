@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 import net from 'net';
 import { HOST, PORTS } from './config';
-import { parseTcpHeader } from './types/tcp';
+import { parsePayload, parseSshPayload } from './types/tcp';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -37,13 +37,23 @@ if (cmd === 'ping') {
     pingAll();
 } else if (cmd === 'parse' && args[0]) {
     try {
-        const header = parseTcpHeader(args[0]);
-        console.log('Parsed TCP Header:', JSON.stringify(header, null, 2));
+        const { protocol, payload } = parsePayload(args[0]);
+        console.log('Detected Protocol:', protocol);
+        console.log('Payload (hex):', payload.toString('hex'));
+        console.log('Payload (ascii):', payload.toString('ascii'));
+        if (protocol === 'SSH') {
+            const ssh = parseSshPayload(payload);
+            if (ssh) {
+                console.log('SSH Payload:', JSON.stringify(ssh, null, 2));
+            } else {
+                console.log('Could not parse SSH payload.');
+            }
+        }
     } catch (e) {
         if (e instanceof Error) {
-            console.error('Failed to parse TCP header:', e.message);
+            console.error('Failed to parse payload:', e.message);
         } else {
-            console.error('Failed to parse TCP header:', e);
+            console.error('Failed to parse payload:', e);
         }
     }
 } else {
