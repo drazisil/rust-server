@@ -16,7 +16,10 @@ function createServer(port: number) {
 
         socket.on('data', (data: Buffer) => {
             const { protocol, payload, tls, ssl3 } = parsePayload(data);
-            logger.info(getParsedPayloadLogObject({ port, protocol, payload, tls, ssl3 }), 'Message received');
+            // Only log non-HTTP requests before forwarding
+            if (protocol !== 'HTTP') {
+                logger.info(getParsedPayloadLogObject({ port, protocol, payload, tls, ssl3 }), 'Message received');
+            }
             // Forward HTTP requests to Express
             if (protocol === 'HTTP') {
                 // Parse the HTTP request line to get method, path, and headers
