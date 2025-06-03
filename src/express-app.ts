@@ -1,6 +1,7 @@
 // src/express-app.ts
 import express from 'express';
 import { logger } from './logger';
+import authRouter from './routes/auth';
 
 const app = express();
 app.use(express.json());
@@ -14,23 +15,7 @@ app.use((req, res, next) => {
 });
 
 // AuthLogin route: expects username and password as query parameters
-app.get('/AuthLogin', (req, res, next) => {
-    res.locals.routeMatched = true;
-    // If req.query is empty, try to parse from req.url manually
-    let username = req.query.username;
-    let password = req.query.password;
-    if (!username || !password) {
-        // Fallback: parse querystring manually
-        const url = require('url');
-        const parsedUrl = url.parse(req.url || '', true);
-        username = parsedUrl.query.username;
-        password = parsedUrl.query.password;
-    }
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Missing username or password' });
-    }
-    res.status(200).json({ message: 'Login received', username, password });
-});
+app.use(authRouter);
 
 // Example route for demonstration
 app.all('*', (req, res) => {
