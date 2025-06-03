@@ -1,10 +1,23 @@
 /// <reference types="node" />
 import * as net from 'net';
+import express from 'express';
 import { HOST, PORTS } from './config';
 import { logger } from './logger';
 import { getParsedPayloadLogObject, parsePayload } from './types';
 
 const clients: net.Socket[] = [];
+const app = express();
+app.use(express.json());
+
+// Example route for demonstration
+app.all('*', (req, res) => {
+    res.status(200).send('Request forwarded to Express server.');
+});
+
+const EXPRESS_PORT = 8080;
+app.listen(EXPRESS_PORT, () => {
+    console.log(`Express server listening on port ${EXPRESS_PORT}`);
+});
 
 function createServer(port: number) {
     const server = net.createServer((socket: net.Socket) => {
@@ -14,6 +27,20 @@ function createServer(port: number) {
         socket.on('data', (data: Buffer) => {
             const { protocol, payload, tls, ssl3 } = parsePayload(data);
             logger.info(getParsedPayloadLogObject({ port, protocol, payload, tls, ssl3 }), 'Message received');
+            // Forward HTTP requests to Express
+            if (protocol === 'HTTP') {
+                // Forward the raw HTTP request to Express
+                // Create a fake socket and pipe the data
+                const client = net.createConnection({ port: EXPRESS_PORT }, () => {
+                    client.write(data);
+                });
+                socket.pipe(client).pipe(socket);
+                client.on('error', (err) => {
+                    logger.error({ port, err }, 'Express forward error');
+                    socket.end();
+                });
+                return;
+            }
             // Broadcast the message to all clients
             clients.forEach((client) => {
                 if (client !== socket) {
