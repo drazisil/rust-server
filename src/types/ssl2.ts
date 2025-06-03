@@ -89,7 +89,28 @@ const SSL2_HANDSHAKE_TYPE_MAP: Record<number, string> = {
     8: 'ClientCertificate',
 };
 
-function parseClientHelloBody(body: Buffer): Ssl2ClientHello | null {
+// SSL 2.0 cipher spec map (see: https://www-archive.mozilla.org/projects/security/pki/nss/ssl/draft02.html#A.4)
+const SSL2_CIPHER_SPECS: Record<string, string> = {
+    '010080': 'SSL_CK_RC4_128_WITH_MD5',
+    '020080': 'SSL_CK_RC4_128_EXPORT40_WITH_MD5',
+    '030080': 'SSL_CK_RC2_128_CBC_WITH_MD5',
+    '040080': 'SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5',
+    '050080': 'SSL_CK_IDEA_128_CBC_WITH_MD5',
+    '060040': 'SSL_CK_DES_64_CBC_WITH_MD5',
+    '0700c0': 'SSL_CK_DES_192_EDE3_CBC_WITH_MD5',
+    // Add more as needed from the spec
+};
+
+function parseCipherSpecs(buf: Buffer): string[] {
+    const specs: string[] = [];
+    for (let i = 0; i + 2 < buf.length; i += 3) {
+        const hex = buf.slice(i, i + 3).toString('hex');
+        specs.push(SSL2_CIPHER_SPECS[hex] || `UNKNOWN(${hex})`);
+    }
+    return specs;
+}
+
+function parseClientHelloBody(body: Buffer): Ssl2ClientHello & { cipherSpecsList: string[] } | null {
     // See: https://www-archive.mozilla.org/projects/security/pki/nss/ssl/draft02.html#2.2
     if (body.length < 9) return null;
     const versionMajor = body[0];
@@ -101,6 +122,7 @@ function parseClientHelloBody(body: Buffer): Ssl2ClientHello | null {
     // No extra +1 for padding: the spec does not mention a padding byte here
     if (body.length < offset + cipherSpecLength + sessionIdLength + challengeLength) return null;
     const cipherSpecs = body.slice(offset, offset + cipherSpecLength);
+    const cipherSpecsList = parseCipherSpecs(cipherSpecs);
     offset += cipherSpecLength;
     const sessionId = body.slice(offset, offset + sessionIdLength);
     offset += sessionIdLength;
@@ -109,6 +131,7 @@ function parseClientHelloBody(body: Buffer): Ssl2ClientHello | null {
         versionMajor,
         versionMinor,
         cipherSpecs,
+        cipherSpecsList,
         sessionId,
         challenge,
     };

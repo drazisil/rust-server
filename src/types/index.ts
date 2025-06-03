@@ -11,7 +11,6 @@ export function logParsedPayload({ protocol, payload, tls, ssl3, ssl2 }: { proto
     } else if (protocol === 'SSL3' && ssl3) {
         console.log('SSL3 Handshake Payload:', JSON.stringify(ssl3, null, 2));
     } else if (protocol === 'SSL2' && ssl2) {
-        console.log('SSL2 Handshake Payload:', JSON.stringify(ssl2, null, 2));
         if (ssl2.parsedBody) {
             console.log('SSL2 Handshake Parsed Body:', JSON.stringify(ssl2.parsedBody, null, 2));
         }
