@@ -1,42 +1,50 @@
 // src/auth/checkCredentials.ts
 
-import * as fs from 'fs';
-import * as path from 'path';
+import { Sequelize, DataTypes, Model } from 'sequelize';
 import bcrypt from 'bcrypt';
 
 /**
- * Dummy in-memory user database. Replace with a real DB or config as needed.
+ * Initialize Sequelize with file-based SQLite for persistence
  */
-const users: Record<string, string> = {
-    'admin': 'admin123',
-    'user': 'password',
-    // Add more users as needed
-};
+const sequelize = new Sequelize('sqlite:' + __dirname + '/users.sqlite', { logging: false });
 
-const USERS_FILE = path.join(__dirname, 'users.json');
-
-function loadUsers(): Record<string, string> {
-    if (fs.existsSync(USERS_FILE)) {
-        try {
-            return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        } catch (e) {
-            return {};
-        }
-    }
-    return {};
+class User extends Model {
+    declare username: string;
+    declare passwordHash: string;
 }
 
-function saveUsers(users: Record<string, string>) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+User.init(
+    {
+        username: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+            allowNull: false,
+        },
+        passwordHash: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+    },
+    {
+        sequelize,
+        modelName: 'User',
+        tableName: 'users',
+        timestamps: false,
+    }
+);
+
+// Ensure the table is created before any operation
+async function ensureDbReady() {
+    await sequelize.sync();
 }
 
 export async function addUser(username: string, password: string): Promise<boolean> {
     if (!username || !password) return false;
-    const users = loadUsers();
-    if (users[username]) return false; // User already exists
+    await ensureDbReady();
+    const existing = await User.findByPk(username);
+    if (existing) return false;
     const hash = await bcrypt.hash(password, 10);
-    users[username] = hash;
-    saveUsers(users);
+    await User.create({ username, passwordHash: hash });
     return true;
 }
 
@@ -48,8 +56,8 @@ export async function addUser(username: string, password: string): Promise<boole
  */
 export async function checkCredentials(username: string, password: string): Promise<boolean> {
     if (!username || !password) return false;
-    const users = loadUsers();
-    const hash = users[username];
-    if (!hash) return false;
-    return bcrypt.compare(password, hash);
+    await ensureDbReady();
+    const user = await User.findByPk(username);
+    if (!user) return false;
+    return bcrypt.compare(password, user.passwordHash);
 }

@@ -43,4 +43,8 @@ describe('checkCredentials', () => {
         // Regression: frank is not in users.json, but admin's password is valid for admin only
         expect(await checkCredentials('frank', 'admin123')).toBe(false);
     });
+
+    it('regression: does not allow login for non-existent user with valid password', async () => {
+        expect(await checkCredentials('frank', 'admin')).toBe(false);
+    });
 });
