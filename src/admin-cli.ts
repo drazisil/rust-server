@@ -37,8 +37,8 @@ if (cmd === 'ping') {
     pingAll();
 } else if (cmd === 'parse' && args[0]) {
     try {
-        const { protocol, payload, tls, ssl3, ssl2 } = parsePayload(args[0]);
-        logParsedPayload({ protocol, payload, tls, ssl3, ssl2 });
+        const { protocol, payload, tls, ssl3 } = parsePayload(args[0]);
+        logParsedPayload({ protocol, payload, tls, ssl3 });
     } catch (e) {
         if (e instanceof Error) {
             console.error('Failed to parse payload:', e.message);
