@@ -2,8 +2,7 @@
 import * as net from 'net';
 import { HOST, PORTS } from './config';
 import { logger } from './logger';
-import { parsePayload } from './types/tcp';
-import { getParsedPayloadLogObject } from './types';
+import { getParsedPayloadLogObject, parsePayload } from './types';
 
 const clients: net.Socket[] = [];
 

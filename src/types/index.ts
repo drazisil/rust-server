@@ -40,3 +40,5 @@ export interface User {
     username: string;
     socketId: string;
 }
+
+export { parsePayload } from './tcp';
