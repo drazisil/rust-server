@@ -1,7 +1,8 @@
 #!/usr/bin/env ts-node
 import net from 'net';
 import { HOST, PORTS } from './config';
-import { parsePayload, parseTlsHandshakePayload } from './types/tcp';
+import { parsePayload } from './types/tcp';
+import { parseTlsHandshakePayload } from './types/tls';
 
 function pingPort(host: string, port: number): Promise<boolean> {
     return new Promise((resolve) => {
