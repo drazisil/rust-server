@@ -18,9 +18,10 @@ router.get('/AuthLogin', (req, res) => {
         password = parsedUrl.query.password;
     }
     if (!username || !password) {
-        return res.status(400).json({ error: 'Missing username or password' });
+        res.status(400).type('text').send('Missing username or password');
+        return;
     }
-    res.status(200).json({ message: 'Login received', username, password });
+    res.status(200).type('text').send(`Login received\nusername: ${username}\npassword: ${password}`);
 });
 
 export default router;
