@@ -1,6 +1,8 @@
 // src/types/ssl2.ts
 // SSL 2.0 Handshake structures and parser (see: https://www-archive.mozilla.org/projects/security/pki/nss/ssl/draft02.html)
 
+import { SSL2_CIPHER_SPECS } from './index';
+
 export interface Ssl2HandshakePayload {
     recordLength: number; // Length of the SSL2 record (from header)
     msgType?: number;     // Handshake message type (if present)
