@@ -2,10 +2,11 @@
 import * as net from 'net';
 import app from './express-app';
 import { HOST, PORTS } from './config';
-import { logger } from './logger';
+import { createLogger } from './logger';
 import { getParsedPayloadLogObject, parsePayload } from './types';
 import * as http from 'http';
 
+const logger = createLogger('server');
 const clients: net.Socket[] = [];
 const EXPRESS_PORT = 8080;
 

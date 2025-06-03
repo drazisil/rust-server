@@ -16,19 +16,27 @@ const streams = [
     { stream: fs.createWriteStream(logPath, { flags: 'a' }) },
 ];
 
-if (process.stdout.isTTY) {
-    // Pretty print to console if running interactively
-    streams.push({
-        stream: pino.transport({
-            target: 'pino-pretty',
-            options: { colorize: true }
-        })
+// Create a logger factory that attaches a module label
+export function createLogger(module: string) {
+    // Use pino-pretty for pretty printing in development (stdout)
+    const isTTY = process.stdout.isTTY;
+    const usePretty = process.env.NODE_ENV !== 'production' && isTTY;
+    return pino({
+        base: undefined,
+        mixin() {
+            return { module };
+        },
+        transport: usePretty
+            ? {
+                  target: 'pino-pretty',
+                  options: {
+                      colorize: true,
+                      translateTime: 'SYS:standard',
+                  },
+              }
+            : undefined,
     });
 }
 
-export const logger = pino(
-    {
-        level: process.env.LOG_LEVEL || 'info',
-    },
-    pino.multistream(streams)
-);
+// Default logger for backward compatibility (main/server)
+export const logger = createLogger('server');

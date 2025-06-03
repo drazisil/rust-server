@@ -1,8 +1,9 @@
 // src/express-app.ts
 import express from 'express';
-import { logger } from './logger';
+import { createLogger } from './logger';
 import authRouter from './routes/auth';
 
+const logger = createLogger('express-app');
 const app = express();
 app.use(express.json());
 

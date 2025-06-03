@@ -1,7 +1,9 @@
 // src/routes/auth.ts
 import { Router } from 'express';
+import { createLogger } from '../logger';
 
 const router = Router();
+const logger = createLogger('auth');
 
 // AuthLogin route: expects username and password as query parameters
 router.get('/AuthLogin', (req, res) => {
