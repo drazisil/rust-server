@@ -1,6 +1,7 @@
 // src/routes/auth.ts
 import { Router } from 'express';
 import { createLogger } from '../logger';
+import { checkCredentials } from '../auth/checkCredentials';
 
 const router = Router();
 const logger = createLogger('auth');
@@ -21,7 +22,11 @@ router.get('/AuthLogin', (req, res) => {
         res.status(400).type('text').send('Missing username or password');
         return;
     }
-    res.status(200).type('text').send(`Login received\nusername: ${username}\npassword: ${password}`);
+    if (!checkCredentials(username as string, password as string)) {
+        res.status(401).type('text').send('Invalid username or password');
+        return;
+    }
+    res.status(200).type('text').send(`Login successful\nusername: ${username}`);
 });
 
 export default router;
