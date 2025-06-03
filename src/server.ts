@@ -1,17 +1,18 @@
 /// <reference types="node" />
 import * as net from 'net';
 import { HOST, PORTS } from './config';
+import { logger } from './logger';
 
 const clients: net.Socket[] = [];
 
 function createServer(port: number) {
     const server = net.createServer((socket: net.Socket) => {
         clients.push(socket);
-        console.log(`A client connected on port ${port}:`, socket.remoteAddress, socket.remotePort);
+        logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client connected');
 
         socket.on('data', (data: Buffer) => {
             const msg = data.toString().trim();
-            console.log('Message received:', msg);
+            logger.info({ port, msg }, 'Message received');
             // Broadcast the message to all clients
             clients.forEach((client) => {
                 if (client !== socket) {
@@ -21,22 +22,22 @@ function createServer(port: number) {
         });
 
         socket.on('end', () => {
-            console.log('Client disconnected:', socket.remoteAddress, socket.remotePort);
+            logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client disconnected');
             // Remove the client from the list
             const idx = clients.indexOf(socket);
             if (idx !== -1) clients.splice(idx, 1);
         });
 
         socket.on('error', (err: Error) => {
-            console.error('Socket error:', err);
+            logger.error({ port, err }, 'Socket error');
         });
     });
 
     server.listen(port, HOST, () => {
-        console.log(`TCP server is running on ${HOST}:${port}`);
+        logger.info({ host: HOST, port }, 'TCP server is running');
     });
     server.on('error', (err: Error) => {
-        console.error(`Failed to bind to ${HOST}:${port} -`, err.message);
+        logger.error({ host: HOST, port, err }, 'Failed to bind');
     });
 }
 
