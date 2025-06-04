@@ -21,6 +21,9 @@ import { HOST, PORTS } from './config';
 import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './types';
 import { addUser, checkCredentials, getCustomerIdByUsername } from './auth/checkCredentials';
 import { Sequelize, DataTypes, Model } from 'sequelize';
+import inquirer from 'inquirer';
+import { defineShardModel } from './auth/shardModel';
+import { addShard } from './auth/shards';
 
 const program = new Command();
 program
@@ -157,6 +160,56 @@ program
       process.exit(1);
     } else {
       console.log(`Customer ID for '${username}': ${customerId}`);
+    }
+  });
+
+// Use the same DB file as the main app for shards
+const shardSequelize = new Sequelize('sqlite:' + __dirname + '/users.sqlite', { logging: false });
+const Shard = defineShardModel(shardSequelize);
+
+program
+  .command('addshard')
+  .description('Add a new shard (interactive)')
+  .action(async () => {
+    await shardSequelize.sync();
+    const answers = await inquirer.prompt([
+      { name: 'name', message: 'Shard name:', type: 'input', validate: (v: any) => !!v },
+      { name: 'description', message: 'Description:', type: 'input', default: '' },
+      { name: 'loginServerIp', message: 'Login server IP:', type: 'input', validate: (v: any) => !!v },
+      { name: 'loginServerPort', message: 'Login server port:', type: 'number', validate: (v: any) => typeof v === 'number' && v > 0 },
+      { name: 'lobbyServerIp', message: 'Lobby server IP:', type: 'input', validate: (v: any) => !!v },
+      { name: 'lobbyServerPort', message: 'Lobby server port:', type: 'number', validate: (v: any) => typeof v === 'number' && v > 0 },
+      { name: 'mcotsServerIp', message: 'MCOTS server IP:', type: 'input', validate: (v: any) => !!v },
+      { name: 'statusId', message: 'Status ID:', type: 'number', default: 1 },
+      { name: 'statusReason', message: 'Status reason:', type: 'input', default: 'Online' },
+      { name: 'serverGroupName', message: 'Server group name:', type: 'input', default: '' },
+      { name: 'population', message: 'Population:', type: 'number', default: 1 },
+      { name: 'maxPersonasPerUser', message: 'Max personas per user:', type: 'number', default: 1 },
+      { name: 'diagnosticServerHost', message: 'Diagnostic server host:', type: 'input', default: '' },
+      { name: 'diagnosticServerPort', message: 'Diagnostic server port:', type: 'number', default: 0 },
+    ]);
+    const shardData = {
+      name: answers.name,
+      description: answers.description,
+      loginServerIp: answers.loginServerIp,
+      loginServerPort: Number(answers.loginServerPort),
+      lobbyServerIp: answers.lobbyServerIp,
+      lobbyServerPort: Number(answers.lobbyServerPort),
+      mcotsServerIp: answers.mcotsServerIp,
+      statusId: Number(answers.statusId),
+      statusReason: answers.statusReason,
+      serverGroupName: answers.serverGroupName,
+      population: Number(answers.population),
+      maxPersonasPerUser: Number(answers.maxPersonasPerUser),
+      diagnosticServerHost: answers.diagnosticServerHost,
+      diagnosticServerPort: Number(answers.diagnosticServerPort),
+    };
+    try {
+      await Shard.create(shardData as any);
+      console.log('Shard added successfully.');
+    } catch (e) {
+      console.error('Failed to add shard:', e instanceof Error ? e.message : e);
+      process.exit(1);
     }
   });
 
