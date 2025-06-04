@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/data/Code/my-socket-server
+WorkingDirectory=/data/Code/oxide
 Environment=NODE_ENV=production
 # Uncomment and edit the next line to load environment variables from a file
-# EnvironmentFile=/data/Code/my-socket-server/.env
-ExecStart=/usr/bin/node /data/Code/my-socket-server/dist/server.js
+# EnvironmentFile=/data/Code/oxide/.env
+ExecStart=/usr/bin/node /data/Code/oxide/dist/server.js
 Restart=on-failure
 RestartSec=5
 User=www-data

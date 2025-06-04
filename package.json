@@ -1,5 +1,5 @@
 {
-  "name": "my-socket-server",
+  "name": "oxide",
   "version": "1.0.0",
   "description": "A simple socket server using TypeScript and Node.js",
   "main": "dist/server.js",

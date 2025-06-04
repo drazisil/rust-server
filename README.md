@@ -13,12 +13,12 @@ This project is a simple socket server built with TypeScript and Node.js using t
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/my-socket-server.git
+   git clone https://github.com/yourusername/oxide.git
    ```
 
 2. Navigate to the project directory:
    ```
-   cd my-socket-server
+   cd oxide
    ```
 
 3. Install the dependencies:
@@ -38,7 +38,7 @@ The server will be running on `http://localhost:3000` by default. You can connec
 ## File Structure
 
 ```
-my-socket-server
+oxide
 ├── src
 │   ├── server.ts          # Entry point for the socket server
 │   └── types

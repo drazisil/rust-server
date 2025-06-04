@@ -9,7 +9,7 @@ import { Sequelize, DataTypes, Model } from 'sequelize';
 const program = new Command();
 program
   .name('admin-cli.ts')
-  .description('Admin CLI for my-socket-server')
+  .description('Admin CLI for oxide')
   .version('1.0.0');
 
 function pingPort(host: string, port: number): Promise<boolean> {

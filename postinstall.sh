@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinstall.sh: Post-install steps for my-socket-server
+# postinstall.sh: Post-install steps for oxide
 
 # Make CLI executable
 chmod +x ./src/admin-cli.ts
@@ -11,9 +11,9 @@ npm run build
 echo "Checking for systemd..."
 if [ "$(uname)" = 'Linux' ] && [ -d /etc/systemd/system ]; then
   echo "Installing systemd service..."
-  sudo cp ./my-socket-server.service /etc/systemd/system/
+  sudo cp ./oxide.service /etc/systemd/system/
   sudo systemctl daemon-reload
-  sudo systemctl enable --now my-socket-server
+  sudo systemctl enable --now oxide
   echo "Systemd service installed and started."
 else
   echo "Systemd not detected or not supported. Skipping service install."
