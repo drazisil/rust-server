@@ -12,29 +12,31 @@ async function ensureDbReady() {
     await sequelize.sync();
 }
 
-export type ShardType = typeof Shard.prototype;
+// Export a type for the Shard model class
+export type ShardModelType = ReturnType<typeof defineShardModel>;
+export type ShardType = InstanceType<ReturnType<typeof defineShardModel>>;
 
-export async function getAllShards(): Promise<ShardType[]> {
+export async function getAllShards(ShardModel: ShardModelType = Shard): Promise<ShardType[]> {
     await ensureDbReady();
-    return Shard.findAll();
+    return ShardModel.findAll();
 }
 
-export async function getShardById(id: number): Promise<ShardType | null> {
+export async function getShardById(id: number, ShardModel: ShardModelType = Shard): Promise<ShardType | null> {
     await ensureDbReady();
-    return Shard.findByPk(id);
+    return ShardModel.findByPk(id);
 }
 
-export async function addShard(shard: Omit<ShardType, 'id'>): Promise<ShardType> {
+export async function addShard(shard: Omit<ShardType, 'id'>, ShardModel: ShardModelType = Shard): Promise<ShardType> {
     await ensureDbReady();
-    return Shard.create(shard as any);
+    return ShardModel.create(shard as any);
 }
 
-export async function updateShard(shard: ShardType): Promise<void> {
+export async function updateShard(shard: ShardType, ShardModel: ShardModelType = Shard): Promise<void> {
     await ensureDbReady();
-    await Shard.update(shard as any, { where: { id: shard.id } });
+    await ShardModel.update(shard as any, { where: { id: shard.id } });
 }
 
-export async function deleteShard(id: number): Promise<void> {
+export async function deleteShard(id: number, ShardModel: ShardModelType = Shard): Promise<void> {
     await ensureDbReady();
-    await Shard.destroy({ where: { id } });
+    await ShardModel.destroy({ where: { id } });
 }
