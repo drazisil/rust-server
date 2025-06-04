@@ -22,6 +22,18 @@ import { checkCredentials } from '../auth/checkCredentials';
 const router = Router();
 const logger = createLogger('auth');
 
+// Helper function for sending success message
+function sendLoginSuccess(res: any, ticket: string) {
+    res.status(200).type('text').send(`Valid=TRUE\nTicket=${ticket}`);
+}
+
+// Helper function for sending failure message
+function sendLoginFailure(res: any, reasonCode: string, reasonText: string, reasonUrl: string, statusCode: number = 401) {
+    res.status(statusCode).type('text').send(
+        `reasoncode=${reasonCode}\nreasontext=${reasonText}\nreasonurl=${reasonUrl}`
+    );
+}
+
 // AuthLogin route: expects username and password as query parameters
 router.get('/AuthLogin', async (req, res) => {
     // If req.query is empty, try to parse from req.url manually
@@ -35,7 +47,13 @@ router.get('/AuthLogin', async (req, res) => {
         password = parsedUrl.query.password;
     }
     if (!username || !password) {
-        res.status(400).type('text').send('Missing username or password');
+        sendLoginFailure(
+            res,
+            'INV-100',
+            'Opps!',
+            'https://winehq.com',
+            400
+        );
         return;
     }
     // Ensure both are strings (Express query params can be string|string[]|undefined)
@@ -44,10 +62,18 @@ router.get('/AuthLogin', async (req, res) => {
     // Use await for checkCredentials
     const valid = await checkCredentials(username as string, password as string);
     if (!valid) {
-        res.status(401).type('text').send('Invalid username or password');
+        sendLoginFailure(
+            res,
+            'INV-100',
+            'Opps!',
+            'https://winehq.com',
+            400
+        );
         return;
     }
-    res.status(200).type('text').send(`Login successful\nusername: ${username}`);
+    // Generate a ticket (for now, use username as a placeholder)
+    const ticket = username as string; // Replace with real ticket logic if needed
+    sendLoginSuccess(res, ticket);
 });
 
 export default router;
