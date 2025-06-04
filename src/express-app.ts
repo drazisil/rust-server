@@ -9,7 +9,12 @@ app.use(express.json());
 
 // Log all requests received by the Express server
 app.use((req, res, next) => {
-    logger.info({ method: req.method, url: req.originalUrl, ip: req.ip }, '[Express] Request received');
+    // Clone query and mask password if present
+    const safeQuery = { ...req.query };
+    if (typeof safeQuery.password === 'string') {
+        safeQuery.password = '[REDACTED]';
+    }
+    logger.info({ method: req.method, url: req.originalUrl, ip: req.ip, query: safeQuery }, '[Express] Request received');
     // Attach a flag to the response to track if a route matched
     res.locals.routeMatched = false;
     next();
