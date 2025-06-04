@@ -1,63 +1,58 @@
 // src/auth/checkCredentials.ts
-
-import { Sequelize, DataTypes, Model } from 'sequelize';
+// Refactored for 12-factor backing service: database is injected, not hardcoded
+import { Sequelize, DataTypes, Model, InferAttributes, InferCreationAttributes } from 'sequelize';
 import bcrypt from 'bcrypt';
 
-/**
- * Initialize Sequelize with file-based SQLite for persistence
- */
-const sequelize = new Sequelize('sqlite:' + __dirname + '/users.sqlite', { logging: false });
-
-class User extends Model {
-    declare username: string;
-    declare passwordHash: string;
+export function defineUserModel(sequelize: Sequelize) {
+    class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+        declare username: string;
+        declare passwordHash: string;
+    }
+    User.init(
+        {
+            username: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                allowNull: false,
+            },
+            passwordHash: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+        },
+        {
+            sequelize,
+            modelName: 'User',
+            tableName: 'users',
+            timestamps: false,
+        }
+    );
+    return User;
 }
 
-User.init(
-    {
-        username: {
-            type: DataTypes.STRING,
-            primaryKey: true,
-            allowNull: false,
-        },
-        passwordHash: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-    },
-    {
-        sequelize,
-        modelName: 'User',
-        tableName: 'users',
-        timestamps: false,
-    }
-);
+// Default: use DB URL from env or fallback to file
+const DB_URL = process.env.AUTH_DB_URL || ('sqlite:' + __dirname + '/users.sqlite');
+export const sequelize = new Sequelize(DB_URL, { logging: false });
+export const User = defineUserModel(sequelize);
 
-// Ensure the table is created before any operation
 async function ensureDbReady() {
     await sequelize.sync();
 }
 
-export async function addUser(username: string, password: string): Promise<boolean> {
+export async function addUser(username: string, password: string, userModel = User): Promise<boolean> {
     if (!username || !password) return false;
     await ensureDbReady();
-    const existing = await User.findByPk(username);
+    const existing = await userModel.findByPk(username);
     if (existing) return false;
     const hash = await bcrypt.hash(password, 10);
-    await User.create({ username, passwordHash: hash });
+    await userModel.create({ username: username as any, passwordHash: hash } as any);
     return true;
 }
 
-/**
- * Checks if the provided username and password are valid.
- * @param username The username to check
- * @param password The password to check
- * @returns true if valid, false otherwise
- */
-export async function checkCredentials(username: string, password: string): Promise<boolean> {
+export async function checkCredentials(username: string, password: string, userModel = User): Promise<boolean> {
     if (!username || !password) return false;
     await ensureDbReady();
-    const user = await User.findByPk(username);
+    const user = await userModel.findByPk(username);
     if (!user) return false;
     return bcrypt.compare(password, user.passwordHash);
 }
