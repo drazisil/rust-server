@@ -1,6 +1,6 @@
 # Admin CLI Usage
 
-The admin CLI (`src/admin-cli.ts`) provides commands for managing and interacting with your socket server and user authentication system.
+The admin CLI (`src/admin-cli.ts`) provides commands for managing and interacting with your oxide server and user authentication system.
 
 ## Usage
 
@@ -59,9 +59,6 @@ npx ts-node src/admin-cli.ts checkuser <username> <password>
 ```
 - `<username>`: The username to check.
 - `<password>`: The password to check.
-
-**Output:**  
-Prints whether the credentials are valid or invalid.
 
 ---
 

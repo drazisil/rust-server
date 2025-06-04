@@ -1,4 +1,4 @@
-# My Socket Server
+# Oxide
 
 This project is a simple socket server built with TypeScript and Node.js using the `socket.io` library for real-time communication.
 
@@ -41,11 +41,32 @@ The server will be running on `http://localhost:3000` by default. You can connec
 oxide
 ├── src
 │   ├── server.ts          # Entry point for the socket server
-│   └── types
-│       └── index.ts      # Type definitions for messages and users
+│   ├── admin-cli.ts       # Admin CLI for oxide
+│   ├── config.ts
+│   ├── express-app.ts
+│   ├── logger.ts
+│   ├── auth/
+│   │   ├── admin-cli.guard.test.ts
+│   │   ├── checkCredentials.test.ts
+│   │   ├── checkCredentials.ts
+│   │   └── users.sqlite
+│   ├── routes/
+│   │   └── auth.ts
+│   └── types/
+│       ├── index.ts
+│       ├── ssl2.ts
+│       ├── ssl3.ts
+│       ├── tcp.ts
+│       └── tls.ts
 ├── package.json           # npm configuration file
 ├── tsconfig.json          # TypeScript configuration file
-└── README.md              # Project documentation
+├── oxide.service          # systemd service unit
+├── postinstall.sh         # Post-install automation
+├── uninstall.sh           # Service uninstall script
+├── .env.example           # Example environment variables
+├── CLI_COMMANDS.md        # CLI documentation
+├── README.md              # Project documentation
+└── ...
 ```
 
 ## License
