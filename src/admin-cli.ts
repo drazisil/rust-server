@@ -66,7 +66,24 @@ User.init(
 
 const [,, cmd, ...args] = process.argv;
 
-if (cmd === 'ping') {
+function printHelp() {
+    console.log(`Usage: admin-cli.ts <command> [arguments...]
+
+Commands:
+  ping                                 Ping all configured ports
+  parse <hexstring>                    Parse a hex-encoded payload
+  adduser <username> <password> <customerId>  Add a new user
+  checkuser <username> <password>      Check if credentials are valid
+  listusers                            List all usernames
+  getcustomerid <username>             Get the customerId for a username
+  help                                 Show this help message
+`);
+}
+
+if (cmd === 'help' || cmd === '--help' || cmd === '-h' || !cmd) {
+    printHelp();
+    process.exit(0);
+} else if (cmd === 'ping') {
     pingAll();
 } else if (cmd === 'parse' && args[0]) {
     try {
@@ -122,5 +139,6 @@ if (cmd === 'ping') {
         }
     })();
 } else {
-    console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> <customerId> | checkuser <username> <password> | getcustomerid <username>');
+    printHelp();
+    process.exit(1);
 }
