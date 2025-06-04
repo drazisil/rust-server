@@ -10,19 +10,34 @@ function runCli(args: string[]): string {
 
 describe('CLI guard tests', () => {
     it('prints help with no arguments', () => {
-        const output = runCli([]);
+        let output = '';
+        try {
+            output = runCli([]);
+        } catch (e: any) {
+            output = e.stdout?.toString() || e.message;
+        }
         expect(output).toMatch(/Usage: admin-cli\.ts/);
         expect(output).toMatch(/adduser/);
         expect(output).toMatch(/getcustomerid/);
     });
 
     it('prints help with -h', () => {
-        const output = runCli(['-h']);
+        let output = '';
+        try {
+            output = runCli(['-h']);
+        } catch (e: any) {
+            output = e.stdout?.toString() || e.message;
+        }
         expect(output).toMatch(/Usage: admin-cli\.ts/);
     });
 
     it('prints help with --help', () => {
-        const output = runCli(['--help']);
+        let output = '';
+        try {
+            output = runCli(['--help']);
+        } catch (e: any) {
+            output = e.stdout?.toString() || e.message;
+        }
         expect(output).toMatch(/Usage: admin-cli\.ts/);
     });
 
@@ -38,12 +53,17 @@ describe('CLI guard tests', () => {
 
     it('fails gracefully on unknown command', () => {
         let error = null;
+        let output = '';
+        let stderr = '';
         try {
             runCli(['notacommand']);
         } catch (e: any) {
             error = e;
+            output = e.stdout?.toString() || '';
+            stderr = e.stderr?.toString() || '';
         }
         expect(error).not.toBeNull();
-        expect(error.stdout?.toString() || error.message).toMatch(/Usage: admin-cli\.ts/);
+        expect(output + stderr).toMatch(/Usage: admin-cli\.ts/);
+        expect(output + stderr).toMatch(/unknown command 'notacommand'/);
     });
 });
