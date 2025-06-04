@@ -33,18 +33,19 @@ npx ts-node src/admin-cli.ts parse <hexstring>
 
 ---
 
-### 3. `adduser <username> <password>`
+### 3. `adduser <username> <password> <customerId>`
 
 Add a new user account to the authentication database.
 
 **Usage:**
 ```sh
-npx ts-node src/admin-cli.ts adduser <username> <password>
+npx ts-node src/admin-cli.ts adduser <username> <password> <customerId>
 ```
 - `<username>`: The username for the new account.
 - `<password>`: The password for the new account (will be securely hashed).
+- `<customerId>`: The customer ID to associate with this user (required).
 
-**Note:** Fails if the user already exists.
+**Note:** Fails if the user already exists or input is invalid.
 
 ---
 
@@ -78,12 +79,28 @@ Prints a list of all usernames.
 
 ---
 
+### 6. `getcustomerid <username>`
+
+Fetch the customerId for a given username (no password required).
+
+**Usage:**
+```sh
+npx ts-node src/admin-cli.ts getcustomerid <username>
+```
+- `<username>`: The username whose customerId you want to fetch.
+
+**Output:**  
+Prints the customerId for the user, or a not found message if the user does not exist.
+
+---
+
 ## Example
 
 ```sh
-npx ts-node src/admin-cli.ts adduser alice secret123
+npx ts-node src/admin-cli.ts adduser alice secret123 CUST-001
 npx ts-node src/admin-cli.ts checkuser alice secret123
 npx ts-node src/admin-cli.ts listusers
+npx ts-node src/admin-cli.ts getcustomerid alice
 ```
 
 ---
