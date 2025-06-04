@@ -1,7 +1,7 @@
 {
   "name": "oxide",
   "version": "1.0.0",
-  "description": "A simple socket server using TypeScript and Node.js",
+  "description": "A modular, production-ready TypeScript TCP socket server (GPL-3.0-or-later)",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -35,5 +35,5 @@
   "engines": {
     "node": ">=12.0.0"
   },
-  "license": "MIT"
+  "license": "GPL-3.0-or-later"
 }
