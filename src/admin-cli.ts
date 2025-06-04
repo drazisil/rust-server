@@ -192,9 +192,9 @@ program
       name: answers.name,
       description: answers.description,
       loginServerIp: answers.loginServerIp,
-      loginServerPort: Number(answers.loginServerPort),
+      loginServerPort: 8228, // Default port for login server
       lobbyServerIp: answers.lobbyServerIp,
-      lobbyServerPort: Number(answers.lobbyServerPort),
+      lobbyServerPort: 7003, // Default port for lobby server
       mcotsServerIp: answers.mcotsServerIp,
       statusId: Number(answers.statusId),
       statusReason: answers.statusReason,
@@ -202,7 +202,7 @@ program
       population: Number(answers.population),
       maxPersonasPerUser: Number(answers.maxPersonasPerUser),
       diagnosticServerHost: answers.diagnosticServerHost,
-      diagnosticServerPort: Number(answers.diagnosticServerPort),
+      diagnosticServerPort: 80, // Default port for diagnostic server
     };
     try {
       await Shard.create(shardData as any);
