@@ -2,7 +2,7 @@
 import net from 'net';
 import { HOST, PORTS } from './config';
 import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './types';
-import { addUser, checkCredentials } from './auth/checkCredentials';
+import { addUser, checkCredentials, getCustomerIdByUsername } from './auth/checkCredentials';
 import { Sequelize, DataTypes, Model } from 'sequelize';
 
 function pingPort(host: string, port: number): Promise<boolean> {
@@ -111,6 +111,16 @@ if (cmd === 'ping') {
             users.forEach((u: any) => console.log(' -', u.username));
         }
     })();
+} else if (cmd === 'getcustomerid' && args[0]) {
+    const username = args[0];
+    (async () => {
+        const customerId = await getCustomerIdByUsername(username, User);
+        if (!customerId) {
+            console.log(`User '${username}' not found.`);
+        } else {
+            console.log(`Customer ID for '${username}': ${customerId}`);
+        }
+    })();
 } else {
-    console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> <customerId> | checkuser <username> <password>');
+    console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> <customerId> | checkuser <username> <password> | getcustomerid <username>');
 }

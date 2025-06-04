@@ -61,3 +61,9 @@ export async function checkCredentials(username: string, password: string, userM
     if (!user) return false;
     return bcrypt.compare(password, user.passwordHash);
 }
+
+export async function getCustomerIdByUsername(username: string, userModel = User): Promise<string | null> {
+    await ensureDbReady();
+    const user = await userModel.findByPk(username, { attributes: ['customerId'] });
+    return user ? user.customerId : null;
+}
