@@ -9,7 +9,7 @@
     "dev": "ts-node src/server.ts",
     "admin": "ts-node src/admin-cli.ts",
     "test": "vitest run",
-    "postinstall": "chmod +x ./src/admin-cli.ts"
+    "postinstall": "sh ./postinstall.sh"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

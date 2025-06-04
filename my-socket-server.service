@@ -1,0 +1,18 @@
+[Unit]
+Description=My Socket Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/data/Code/my-socket-server
+Environment=NODE_ENV=production
+# Uncomment and edit the next line to load environment variables from a file
+# EnvironmentFile=/data/Code/my-socket-server/.env
+ExecStart=/usr/bin/node /data/Code/my-socket-server/dist/server.js
+Restart=on-failure
+RestartSec=5
+User=www-data
+# Adjust the user as needed
+
+[Install]
+WantedBy=multi-user.target
