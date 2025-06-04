@@ -83,6 +83,34 @@ Commands:
 if (cmd === 'help' || cmd === '--help' || cmd === '-h' || !cmd) {
     printHelp();
     process.exit(0);
+} else if ((cmd === 'ping' && (args[0] === '-h' || args[0] === '--help')) ||
+           (cmd === 'parse' && (!args[0] || args[0] === '-h' || args[0] === '--help')) ||
+           (cmd === 'adduser' && (args[0] === '-h' || args[0] === '--help')) ||
+           (cmd === 'checkuser' && (args[0] === '-h' || args[0] === '--help')) ||
+           (cmd === 'listusers' && (args[0] === '-h' || args[0] === '--help')) ||
+           (cmd === 'getcustomerid' && (args[0] === '-h' || args[0] === '--help'))) {
+    // Per-command help
+    switch (cmd) {
+        case 'ping':
+            console.log('Usage: admin-cli.ts ping\n  Ping all configured ports');
+            break;
+        case 'parse':
+            console.log('Usage: admin-cli.ts parse <hexstring>\n  Parse a hex-encoded payload');
+            break;
+        case 'adduser':
+            console.log('Usage: admin-cli.ts adduser <username> <password> <customerId>\n  Add a new user');
+            break;
+        case 'checkuser':
+            console.log('Usage: admin-cli.ts checkuser <username> <password>\n  Check if credentials are valid');
+            break;
+        case 'listusers':
+            console.log('Usage: admin-cli.ts listusers\n  List all usernames');
+            break;
+        case 'getcustomerid':
+            console.log('Usage: admin-cli.ts getcustomerid <username>\n  Get the customerId for a username');
+            break;
+    }
+    process.exit(0);
 } else if (cmd === 'ping') {
     pingAll();
 } else if (cmd === 'parse' && args[0]) {
