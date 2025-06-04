@@ -14,14 +14,16 @@ beforeAll(async () => {
 describe('checkCredentials', () => {
     const uniqueAdmin = `admin_test_${Date.now()}`;
     const uniqueUser = `user_test_${Date.now()}`;
+    const adminCustomerId = `cid_admin_${Date.now()}`;
+    const userCustomerId = `cid_user_${Date.now()}`;
 
     it('returns true for valid admin credentials', async () => {
-        await addUser(uniqueAdmin, 'admin123', TestUser);
+        await addUser(uniqueAdmin, 'admin123', adminCustomerId, TestUser);
         expect(await checkCredentials(uniqueAdmin, 'admin123', TestUser)).toBe(true);
     });
 
     it('returns true for valid user credentials', async () => {
-        await addUser(uniqueUser, 'password', TestUser);
+        await addUser(uniqueUser, 'password', userCustomerId, TestUser);
         expect(await checkCredentials(uniqueUser, 'password', TestUser)).toBe(true);
     });
 

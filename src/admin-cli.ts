@@ -38,6 +38,7 @@ const sequelize = new Sequelize('sqlite:' + __dirname + '/auth/users.sqlite', { 
 class User extends Model {
     declare username: string;
     declare passwordHash: string;
+    declare customerId: string;
 }
 User.init(
     {
@@ -47,6 +48,10 @@ User.init(
             allowNull: false,
         },
         passwordHash: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        customerId: {
             type: DataTypes.STRING,
             allowNull: false,
         },
@@ -74,10 +79,11 @@ if (cmd === 'ping') {
             console.error('Failed to parse payload:', e);
         }
     }
-} else if (cmd === 'adduser' && args[0] && args[1]) {
+} else if (cmd === 'adduser' && args[0] && args[1] && args[2]) {
     const username = args[0];
     const password = args[1];
-    addUser(username, password).then((success) => {
+    const customerId = args[2];
+    addUser(username, password, customerId).then((success) => {
         if (success) {
             console.log(`User '${username}' added successfully.`);
         } else {
@@ -106,5 +112,5 @@ if (cmd === 'ping') {
         }
     })();
 } else {
-    console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> | checkuser <username> <password>');
+    console.log('Usage: admin-cli.ts ping | parse <hexstring> | adduser <username> <password> <customerId> | checkuser <username> <password>');
 }

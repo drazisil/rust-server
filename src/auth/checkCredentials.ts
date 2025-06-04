@@ -7,6 +7,7 @@ export function defineUserModel(sequelize: Sequelize) {
     class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
         declare username: string;
         declare passwordHash: string;
+        declare customerId: string;
     }
     User.init(
         {
@@ -18,6 +19,10 @@ export function defineUserModel(sequelize: Sequelize) {
             passwordHash: {
                 type: DataTypes.STRING,
                 allowNull: false,
+            },
+            customerId: {
+                type: DataTypes.STRING,
+                allowNull: false, // Now required
             },
         },
         {
@@ -39,13 +44,13 @@ async function ensureDbReady() {
     await sequelize.sync();
 }
 
-export async function addUser(username: string, password: string, userModel = User): Promise<boolean> {
-    if (!username || !password) return false;
+export async function addUser(username: string, password: string, customerId: string, userModel = User): Promise<boolean> {
+    if (!username || !password || !customerId) return false;
     await ensureDbReady();
     const existing = await userModel.findByPk(username);
     if (existing) return false;
     const hash = await bcrypt.hash(password, 10);
-    await userModel.create({ username: username as any, passwordHash: hash } as any);
+    await userModel.create({ username: username as any, passwordHash: hash, customerId } as any);
     return true;
 }
 
