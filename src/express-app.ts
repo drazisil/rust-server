@@ -18,6 +18,7 @@
 import express from 'express';
 import { createLogger } from './logger';
 import authRouter from './routes/auth';
+import shardListRouter from './routes/shardlist';
 
 const logger = createLogger('express-app');
 const app = express();
@@ -38,6 +39,9 @@ app.use((req, res, next) => {
 
 // AuthLogin route: expects username and password as query parameters
 app.use(authRouter);
+
+// ShardList route
+app.use(shardListRouter);
 
 // Example route for demonstration
 app.all('*', (req, res) => {
