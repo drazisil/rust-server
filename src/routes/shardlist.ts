@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // ShardList route module
 import { Router } from 'express';
+import { getAllShards } from '../auth/shards';
 
 const shardListRouter = Router();
 
@@ -43,47 +44,16 @@ export function formatShardEntry(shard: ShardEntry): string {
 }
 
 // ShardList route: returns a static list of shards
-shardListRouter.get('/ShardList/', (req, res) => {
-    // Example static shard list using ShardEntry structure
-    const shards: ShardEntry[] = [
-        {
-            id: 1,
-            name: 'Shard Alpha',
-            description: 'The first shard',
-            loginServerIp: '192.168.1.10',
-            loginServerPort: 2106,
-            lobbyServerIp: '192.168.1.11',
-            lobbyServerPort: 2206,
-            mcotsServerIp: '192.168.1.12',
-            statusId: 1,
-            statusReason: 'Online',
-            serverGroupName: 'GroupA',
-            population: 123,
-            maxPersonasPerUser: 3,
-            diagnosticServerHost: '192.168.1.13',
-            diagnosticServerPort: 2306
-        },
-        {
-            id: 2,
-            name: 'Shard Beta',
-            description: 'The second shard',
-            loginServerIp: '192.168.2.10',
-            loginServerPort: 2107,
-            lobbyServerIp: '192.168.2.11',
-            lobbyServerPort: 2207,
-            mcotsServerIp: '192.168.2.12',
-            statusId: 0,
-            statusReason: 'Offline',
-            serverGroupName: 'GroupB',
-            population: 0,
-            maxPersonasPerUser: 2,
-            diagnosticServerHost: '192.168.2.13',
-            diagnosticServerPort: 2307
-        }
-    ];
-    // Format each shard using the helper
-    const shardListString = shards.map(formatShardEntry).join('\n\n');
-    res.status(200).type('text').send(shardListString);
+shardListRouter.get('/ShardList/', async (req, res) => {
+    try {
+        const shards = await getAllShards();
+        // Convert Sequelize model instances to plain objects if needed
+        const shardEntries = shards.map(s => s.toJSON ? s.toJSON() : s);
+        const shardListString = shardEntries.map(formatShardEntry).join('\n\n');
+        res.status(200).type('text').send(shardListString);
+    } catch (err) {
+        res.status(500).type('text').send('Failed to fetch shard list');
+    }
 });
 
 export default shardListRouter;
