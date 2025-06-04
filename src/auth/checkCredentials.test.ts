@@ -55,3 +55,19 @@ describe('checkCredentials', () => {
         expect(await checkCredentials('frank', 'admin', TestUser)).toBe(false);
     });
 });
+
+describe('getCustomerIdByUsername', () => {
+    const testUser = `customerid_test_${Date.now()}`;
+    const testCustomerId = `cid_test_${Date.now()}`;
+
+    it('returns the correct customerId for an existing user', async () => {
+        await addUser(testUser, 'testpass', testCustomerId, TestUser);
+        const cid = await import('./checkCredentials').then(m => m.getCustomerIdByUsername(testUser, TestUser));
+        expect(cid).toBe(testCustomerId);
+    });
+
+    it('returns null for a non-existent user', async () => {
+        const cid = await import('./checkCredentials').then(m => m.getCustomerIdByUsername('notarealuser', TestUser));
+        expect(cid).toBeNull();
+    });
+});
