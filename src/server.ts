@@ -17,7 +17,7 @@
 /// <reference types="node" />
 import * as net from 'net';
 import app from './express-app';
-import { HOST, PORTS } from './config';
+import { SERVERHOST  } from './config';
 import { createLogger } from './logger';
 import { getParsedPayloadLogObject, parsePayload } from './types';
 import * as http from 'http';
@@ -113,15 +113,15 @@ function createServer(port: number) {
         });
     });
 
-    server.listen(port, HOST, () => {
-        logger.info({ host: HOST, port }, 'TCP server is running');
+    server.listen(port, '0.0.0.0', () => {
+        logger.info({ host: '0.0.0.0', port }, 'TCP server is running');
     });
     server.on('error', (err: Error) => {
-        logger.error({ host: HOST, port, err }, 'Failed to bind');
+        logger.error({ host: '0.0.0.0', port, err }, 'Failed to bind');
     });
 }
 
-PORTS.forEach((port) => createServer(port));
+[3000, 8226, 8228, 7003, 44300].forEach((port) => createServer(port));
 
 app.listen(EXPRESS_PORT, () => {
     console.log(`Express server listening on port ${EXPRESS_PORT}`);
