@@ -17,10 +17,10 @@
 /// <reference types="node" />
 import * as net from 'net';
 import app from './express-app';
-import { SERVERHOST  } from './config';
 import { createLogger } from './logger';
 import { getParsedPayloadLogObject, parsePayload } from './types';
 import * as http from 'http';
+import { bootstrapInitialRecords } from './bootstrap';
 
 const logger = createLogger('server');
 const clients: net.Socket[] = [];
@@ -121,7 +121,14 @@ function createServer(port: number) {
     });
 }
 
-[3000, 8226, 8228, 7003, 44300].forEach((port) => createServer(port));
+// If run directly, bootstrap
+if (require.main === module) {
+  bootstrapInitialRecords().then(() => {
+    console.log('Bootstrap complete.');
+  });
+}
+
+[3000, 8226, 8228, 7003, 43300].forEach((port) => createServer(port));
 
 app.listen(EXPRESS_PORT, () => {
     console.log(`Express server listening on port ${EXPRESS_PORT}`);

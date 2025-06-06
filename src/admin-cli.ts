@@ -17,7 +17,7 @@
 
 import { Command } from 'commander';
 import net from 'net';
-import { HOST, PORTS } from './config';
+import { EXTERNAL_SERVER_HOST } from './config';
 import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './types';
 import { addUser, checkCredentials, getCustomerIdByUsername } from './auth/checkCredentials';
 import { Sequelize, DataTypes, Model } from 'sequelize';
@@ -25,6 +25,7 @@ import inquirer from 'inquirer';
 import { defineShardModel } from './shardModel';
 import { addShard } from './shards';
 
+const PORTS = [80, 443, 8080, 8228, 7003, 43300]; // Default ports for the admin CLI
 
 const program = new Command();
 program
@@ -56,9 +57,9 @@ program
   .command('ping')
   .description('Ping all configured ports')
   .action(async () => {
-    console.log(`Pinging ports on ${HOST}: ${PORTS.join(', ')}`);
+    console.log(`Pinging ports on ${EXTERNAL_SERVER_HOST}: ${PORTS.join(', ')}`);
     for (const port of PORTS) {
-      const isOpen = await pingPort(HOST, port);
+      const isOpen = await pingPort(EXTERNAL_SERVER_HOST, port);
       console.log(`Port ${port}: ${isOpen ? 'OPEN' : 'CLOSED'}`);
     }
   });
@@ -68,8 +69,8 @@ program
   .description('Parse a hex-encoded payload')
   .action((hexstring) => {
     try {
-      const { protocol, payload, tls, ssl3 } = parsePayload(hexstring);
-      logParsedPayload({ protocol, payload, tls, ssl3 });
+      const { protocol, payload, tls, ssl3, nps } = parsePayload(hexstring);
+      logParsedPayload({ protocol, payload, tls, ssl3, nps });
     } catch (e) {
       if (e instanceof Error) {
         console.error('Failed to parse payload:', e.message);
