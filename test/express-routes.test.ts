@@ -21,7 +21,10 @@ describe('Express routes', () => {
 
   describe('GET /ShardList/', () => {
     // Create a fresh in-memory DB and User model for tests
-    const testSequelize = new Sequelize('sqlite://:memory:', { logging: false });
+    const testSequelize = new Sequelize({
+      dialect: 'sqlite',
+      storage: ':memory:',
+       logging: false });
     const TestShard = defineShardModel(testSequelize);
 
     beforeAll(async () => {
