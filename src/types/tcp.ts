@@ -36,7 +36,10 @@ export function detectProtocol(buf: Buffer): string {
     if (/^(GET|POST|HEAD|PUT|DELETE|OPTIONS|PATCH|CONNECT|TRACE) /.test(ascii)) {
         return 'HTTP';
     }
-    // SSH handshake starts with 'SSH-'
+    if (buf.length > 4 && buf.readInt16BE(2) === buf.length) {
+    // This might be an NPS packet, which has a length field at offset 2
+        return 'NPS';
+    }
     if (ascii.startsWith('SSH-')) {
         return 'SSH';
     }
