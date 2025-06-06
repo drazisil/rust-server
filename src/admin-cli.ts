@@ -22,8 +22,9 @@ import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './typ
 import { addUser, checkCredentials, getCustomerIdByUsername } from './auth/checkCredentials';
 import { Sequelize, DataTypes, Model } from 'sequelize';
 import inquirer from 'inquirer';
-import { defineShardModel } from './auth/shardModel';
-import { addShard } from './auth/shards';
+import { defineShardModel } from './shardModel';
+import { addShard } from './shards';
+
 
 const program = new Command();
 program

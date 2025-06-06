@@ -4,7 +4,7 @@ import { Sequelize } from 'sequelize';
 import { defineShardModel } from './shardModel';
 
 // Default: use DB URL from env or fallback to file
-const DB_URL = process.env.AUTH_DB_URL || ('sqlite:' + __dirname + '/users.sqlite');
+const DB_URL = process.env.AUTH_DB_URL || ('sqlite:' + __dirname + '/shards.sqlite');
 export const sequelize = new Sequelize(DB_URL, { logging: false });
 export const Shard = defineShardModel(sequelize);
 

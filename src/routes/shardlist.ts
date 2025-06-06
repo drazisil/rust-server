@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // ShardList route module
 import { Router } from 'express';
-import { getAllShards } from '../auth/shards';
+import { getAllShards } from '../shards';
 
 const shardListRouter = Router();
 
