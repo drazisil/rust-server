@@ -24,11 +24,12 @@ describe('Express routes', () => {
     const testSequelize = new Sequelize({
       dialect: 'sqlite',
       storage: ':memory:',
-       logging: false });
+      logging: false
+    });
     const TestShard = defineShardModel(testSequelize);
 
     beforeAll(async () => {
-        await testSequelize.sync({ force: true });
+      await testSequelize.sync({ force: true });
 
       // Seed a test shard if none exist
       await TestShard.create({

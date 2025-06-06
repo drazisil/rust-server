@@ -20,10 +20,11 @@ import { defineUserModel, addUser, checkCredentials } from './checkCredentials';
 import { describe, it, expect, beforeAll } from 'vitest';
 
 // Create a fresh in-memory DB and User model for tests
-const testSequelize = new Sequelize({ 
+const testSequelize = new Sequelize({
     dialect: 'sqlite',
     storage: ':memory:',
-    logging: false });
+    logging: false
+});
 const TestUser = defineUserModel(testSequelize);
 
 beforeAll(async () => {
