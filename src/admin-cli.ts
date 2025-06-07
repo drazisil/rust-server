@@ -18,7 +18,7 @@
 import { Command } from 'commander';
 import net from 'net';
 import { EXTERNAL_SERVER_HOST } from './config';
-import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './types';
+import { getParsedPayloadLogObject, parsePayload, logParsedPayload } from './parsers';
 import { addUser, checkCredentials, getCustomerIdByUsername } from './auth/checkCredentials';
 import { Sequelize, DataTypes, Model } from 'sequelize';
 import inquirer from 'inquirer';

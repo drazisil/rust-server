@@ -18,7 +18,7 @@
 import * as net from 'net';
 import app from './express-app';
 import { createLogger } from './logger';
-import { getParsedPayloadLogObject, parsePayload } from './types';
+import { getParsedPayloadLogObject, parsePayload } from './parsers';
 import * as http from 'http';
 import { bootstrapInitialRecords } from './bootstrap';
 
