@@ -14,16 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/// <reference types="node" />
-import * as net from 'net';
+import { createServer, Socket } from 'node:net';
 import app from './express-app';
 import { createLogger } from './logger';
 import { getParsedPayloadLogObject, parsePayload } from './parsers';
-import * as http from 'http';
+import { request } from 'node:http';
 import { bootstrapInitialRecords } from './bootstrap';
 
 const logger = createLogger('server');
-const clients: net.Socket[] = [];
+const clients: Socket[] = [];
 const EXPRESS_PORT = 8080;
 
 /**
@@ -36,7 +35,7 @@ const EXPRESS_PORT = 8080;
  * @param port - The port number on which the data was received.
  * @param socket - The TCP socket instance representing the client connection.
  */
-function handleSocketData(data: Buffer, port: number, socket: net.Socket) {
+function handleSocketData(data: Buffer, port: number, socket: Socket) {
     const { protocol, payload, nps } = parsePayload(data);
 
     if (protocol === 'HTTP') {
@@ -49,7 +48,7 @@ function handleSocketData(data: Buffer, port: number, socket: net.Socket) {
     broadcastToClients(payload, socket);
 }
 
-function forwardHttpToExpress(data: Buffer, socket: net.Socket) {
+function forwardHttpToExpress(data: Buffer, socket: Socket) {
     const requestString = data.toString('utf8');
     const [requestLine, ...headerLines] = requestString.split(/\r?\n/);
     const [method, path] = requestLine.split(' ');
@@ -71,7 +70,7 @@ function forwardHttpToExpress(data: Buffer, socket: net.Socket) {
         method: method || 'GET',
         headers,
     };
-    const req = http.request(options, (res) => {
+    const req = request(options, (res) => {
         let responseData: Buffer[] = [];
         res.on('data', (chunk) => responseData.push(chunk));
         res.on('end', () => {
@@ -99,7 +98,7 @@ function forwardHttpToExpress(data: Buffer, socket: net.Socket) {
     req.end();
 }
 
-function broadcastToClients(payload: Buffer, sender: net.Socket) {
+function broadcastToClients(payload: Buffer, sender: Socket) {
     clients.forEach((client) => {
         if (client !== sender) {
             client.write(payload + '\n');
@@ -107,8 +106,8 @@ function broadcastToClients(payload: Buffer, sender: net.Socket) {
     });
 }
 
-function createServer(port: number) {
-    const server = net.createServer((socket: net.Socket) => {
+function initializeTcpServers(port: number) {
+    const server = createServer((socket: Socket) => {
         clients.push(socket);
         logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client connected');
 
@@ -148,7 +147,7 @@ if (require.main === module) {
     });
 }
 
-[3000, 8226, 8228, 7003, 43300].forEach((port) => createServer(port));
+[3000, 8226, 8228, 7003, 43300].forEach((port) => initializeTcpServers(port));
 
 app.listen(EXPRESS_PORT, () => {
     console.log(`Express server listening on port ${EXPRESS_PORT}`);
