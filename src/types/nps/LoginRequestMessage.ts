@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import { parseNpsBufferSchema } from "./parseNpsBufferSchema";
+
 // src/types/nps/LoginRequestMessage.ts
 // This file defines the NPS (Network Protocol Specification) Login Request message structure.
 
@@ -61,49 +63,13 @@ export interface LoginRequestMessage {
     body: LoginRequestPayload; // Parsed body of the message
 }
 
+// --- LoginRequestMessage parser using the generic utilities ---
+
 export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | null {
     if (buf.length < 4) return null;
-
-    // NPS header: 4 bytes (2-byte ID, 2-byte length)
-    const msgId = '0501'; // Login Request Message
+    const msgId = '0501';
     const msgLength = buf.readUInt16BE(2);
-    if (buf.length < msgLength) return null; // Ensure buffer is long enough
-
-    let offset = 4; // Start after the header
-
-    // Helper functions
-    function safeReadUInt16(): number | null {
-        if (offset + 2 > buf.length) {
-            console.warn(`LoginRequestMessage: Buffer too short for reading 2 bytes at offset ${offset}`);
-            return null;
-        }
-        const val = buf.readUInt16BE(offset);
-        offset += 2;
-        return val;
-    }
-    function safeReadUInt32(): number | null {
-        if (offset + 4 > buf.length) {
-            console.warn(`LoginRequestMessage: Buffer too short for reading 4 bytes at offset ${offset}`);
-            return null;
-        }
-        const val = buf.readUInt32BE(offset);
-        offset += 4;
-        return val;
-    }
-    function safeReadString(len: number, encoding: BufferEncoding = 'utf8'): string | null {
-        if (offset + len > buf.length) return null;
-        const val = buf.toString(encoding, offset, offset + len);
-        offset += len;
-        return val;
-    }
-    function safeReadHex(len: number): string | null {
-        if (offset + len > buf.length) return null;
-        const val = buf.toString('hex', offset, offset + len);
-        offset += len;
-        return val;
-    }
-
-    // Field schema for extensibility
+    if (buf.length < msgLength) return null;
     const schema = [
         { name: 'version', type: 'u16' },
         { name: 'reserved1', type: 'u16' },
@@ -117,45 +83,13 @@ export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | nul
         { name: 'gameId', type: 'string', lengthFrom: 'gameIdLength' },
         { name: 'reserved3', type: 'u32' },
     ] as const;
-
-    // Parse according to schema
-    const parsed: Record<string, any> = {};
-    for (const field of schema) {
-        let value: any = null;
-        switch (field.type) {
-            case 'u16':
-                value = safeReadUInt16();
-                break;
-            case 'u32':
-                value = safeReadUInt32();
-                break;
-            case 'string': {
-                if (!('lengthFrom' in field)) return null;
-                const len = parsed[field.lengthFrom];
-                if (typeof len !== 'number') return null;
-                value = safeReadString(len);
-                break;
-            }
-            case 'hex': {
-                if (!('lengthFrom' in field)) return null;
-                const len = parsed[field.lengthFrom];
-                if (typeof len !== 'number') return null;
-                value = safeReadHex(len);
-                break;
-            }
-            default:
-                return null;
-        }
-        if (value === null) return null;
-        parsed[field.name] = value;
-    }
-
-    // After parsing, offset should be equal to buf.length (not msgLength)
+    const result = parseNpsBufferSchema(buf, 4, schema);
+    if (!result) return null;
+    const { parsed, offset } = result;
     if (offset !== buf.length) {
         console.warn(`LoginRequestMessage: Parsed length ${offset} does not match buffer length ${buf.length}`);
         return null;
     }
-
     return {
         msgId,
         msgLength,
