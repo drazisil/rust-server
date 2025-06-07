@@ -57,13 +57,24 @@ export interface User {
     socketId: string;
 }
 
+/**
+ * Parses a hexadecimal string or Buffer payload and detects its protocol type.
+ * Depending on the detected protocol (SSL3, TLS, or NPS), it further parses the payload
+ * using the appropriate parser and returns the parsed result.
+ *
+ * @param hex - The payload to parse, provided as a hexadecimal string or Buffer.
+ * @returns An object containing:
+ * - `protocol`: The detected protocol as a string.
+ * - `payload`: The original payload as a Buffer.
+ * - `tls`: The parsed TLS handshake payload, if applicable.
+ * - `ssl3`: The parsed SSL3 handshake payload, if applicable.
+ * - `nps`: The parsed NPS message, if applicable.
+ */
 export function parsePayload(hex: string | Buffer): { protocol: string; payload: Buffer; tls?: ReturnType<typeof parseTlsHandshakePayload>; ssl3?: ReturnType<typeof parseSsl3HandshakePayload>, nps?: ReturnType<typeof parseNPSMessage> } {
     const buf = typeof hex === 'string' ? Buffer.from(hex, 'hex') : hex;
     let protocol = detectProtocol(buf);
     let tls, ssl3, nps;
-    // SSL 3.0 handshake detection: contentType=0x16, versionMajor=3, versionMinor=0
-    if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && buf[2] === 0x00) {
-        protocol = 'SSL3';
+    if (protocol === 'SSL3') {
         ssl3 = parseSsl3HandshakePayload(buf) || undefined;
     } else if (protocol === 'TLS') {
         tls = parseTlsHandshakePayload(buf) || undefined;
