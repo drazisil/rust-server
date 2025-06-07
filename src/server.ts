@@ -26,71 +26,82 @@ const logger = createLogger('server');
 const clients: net.Socket[] = [];
 const EXPRESS_PORT = 8080;
 
+/**
+ * Handles incoming data on a TCP socket, parses the protocol, and processes the message accordingly.
+ *
+ * - For non-HTTP protocols, logs the message and broadcasts it to all connected clients except the sender.
+ * - For HTTP protocol, parses the HTTP request, forwards it to an Express server, and writes the full HTTP response back to the TCP client.
+ *
+ * @param data - The raw data buffer received from the socket.
+ * @param port - The port number on which the data was received.
+ * @param socket - The TCP socket instance representing the client connection.
+ */
 function handleSocketData(data: Buffer, port: number, socket: net.Socket) {
     const { protocol, payload, nps } = parsePayload(data);
-    // Only log non-HTTP requests before forwarding
-    if (protocol !== 'HTTP') {
-        logger.info(getParsedPayloadLogObject({ port, protocol, payload, nps }), 'Message received');
-    }
-    // Forward HTTP requests to Express
+
     if (protocol === 'HTTP') {
-        // Parse the HTTP request line to get method, path, and headers
-        const requestString = data.toString('utf8');
-        const [requestLine, ...headerLines] = requestString.split(/\r?\n/);
-        const [method, path] = requestLine.split(' ');
-        // Find the end of headers (empty line)
-        const headerEndIndex = requestString.indexOf('\r\n\r\n');
-        let headers: Record<string, string> = {};
-        for (const line of headerLines) {
-            if (!line.trim()) break;
-            const [key, ...rest] = line.split(':');
-            if (key && rest.length) headers[key.trim().toLowerCase()] = rest.join(':').trim();
-        }
-        // Extract body if present
-        let body: Buffer | undefined = undefined;
-        if (headerEndIndex !== -1 && headerEndIndex + 4 < data.length) {
-            body = data.subarray(headerEndIndex + 4);
-        }
-        // Forward to Express using http.request
-        const options = {
-            hostname: '127.0.0.1',
-            port: EXPRESS_PORT,
-            path: path || '/',
-            method: method || 'GET',
-            headers,
-        };
-        const req = http.request(options, (res) => {
-            let responseData: Buffer[] = [];
-            res.on('data', (chunk) => responseData.push(chunk));
-            res.on('end', () => {
-                // Write the full HTTP response (status line, headers, body) back to the TCP client
-                let responseHeaders = '';
-                responseHeaders += `HTTP/${res.httpVersion} ${res.statusCode} ${res.statusMessage}\r\n`;
-                for (const [key, value] of Object.entries(res.headers)) {
-                    if (Array.isArray(value)) {
-                        for (const v of value) {
-                            responseHeaders += `${key}: ${v}\r\n`;
-                        }
-                    } else if (value !== undefined) {
-                        responseHeaders += `${key}: ${value}\r\n`;
-                    }
-                }
-                responseHeaders += '\r\n';
-                socket.write(responseHeaders);
-                socket.write(Buffer.concat(responseData));
-            });
-        });
-        req.on('error', (err) => {
-            logger.error({ port, err }, 'Express forward error');
-            socket.end();
-        });
-        if (body) req.write(body);
-        req.end();
+        forwardHttpToExpress(data, socket);
         return;
     }
-    // Broadcast the message to all clients
+
+    // Log and broadcast non-HTTP messages
+    logger.info(getParsedPayloadLogObject({ port, protocol, payload, nps }), 'Message received');
+    broadcastToClients(payload, socket);
+}
+
+function forwardHttpToExpress(data: Buffer, socket: net.Socket) {
+    const requestString = data.toString('utf8');
+    const [requestLine, ...headerLines] = requestString.split(/\r?\n/);
+    const [method, path] = requestLine.split(' ');
+    const headerEndIndex = requestString.indexOf('\r\n\r\n');
+    let headers: Record<string, string> = {};
+    for (const line of headerLines) {
+        if (!line.trim()) break;
+        const [key, ...rest] = line.split(':');
+        if (key && rest.length) headers[key.trim().toLowerCase()] = rest.join(':').trim();
+    }
+    let body: Buffer | undefined = undefined;
+    if (headerEndIndex !== -1 && headerEndIndex + 4 < data.length) {
+        body = data.subarray(headerEndIndex + 4);
+    }
+    const options = {
+        hostname: '127.0.0.1',
+        port: EXPRESS_PORT,
+        path: path || '/',
+        method: method || 'GET',
+        headers,
+    };
+    const req = http.request(options, (res) => {
+        let responseData: Buffer[] = [];
+        res.on('data', (chunk) => responseData.push(chunk));
+        res.on('end', () => {
+            let responseHeaders = '';
+            responseHeaders += `HTTP/${res.httpVersion} ${res.statusCode} ${res.statusMessage}\r\n`;
+            for (const [key, value] of Object.entries(res.headers)) {
+                if (Array.isArray(value)) {
+                    for (const v of value) {
+                        responseHeaders += `${key}: ${v}\r\n`;
+                    }
+                } else if (value !== undefined) {
+                    responseHeaders += `${key}: ${value}\r\n`;
+                }
+            }
+            responseHeaders += '\r\n';
+            socket.write(responseHeaders);
+            socket.write(Buffer.concat(responseData));
+        });
+    });
+    req.on('error', (err) => {
+        logger.error({ port: EXPRESS_PORT, err }, 'Express forward error');
+        socket.end();
+    });
+    if (body) req.write(body);
+    req.end();
+}
+
+function broadcastToClients(payload: Buffer, sender: net.Socket) {
     clients.forEach((client) => {
-        if (client !== socket) {
+        if (client !== sender) {
             client.write(payload + '\n');
         }
     });

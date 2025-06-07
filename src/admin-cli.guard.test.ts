@@ -18,7 +18,7 @@ import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'child_process';
 import path from 'path';
 
-const CLI_PATH = path.resolve(__dirname, '../admin-cli.ts');
+const CLI_PATH = path.resolve(__dirname, './admin-cli.ts');
 
 function runCli(args: string[]): string {
     return execFileSync('ts-node', [CLI_PATH, ...args], { encoding: 'utf8' });
