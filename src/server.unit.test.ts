@@ -34,18 +34,18 @@ describe('getParsedPayloadLogObject', () => {
 describe('NPSMessageDTO and handleNpsMessage', () => {
     it('returns a response DTO with the same id and payload (echo)', () => {
         const dto: NPSMessageDTO = {
-            id: '1.2.3.4:5678',
+            socketId: '1.2.3.4:5678',
             payload: Buffer.from('test'),
             nps: { type: 'test', data: 42 } as any,
         };
         const response = handleNpsMessage(dto);
         expect(response).toBeDefined();
-        expect(response?.id).toBe(dto.id);
+        expect(response?.socketId).toBe(dto.socketId);
         expect(response?.payload?.toString()).toBe('test');
     });
     it('returns undefined for missing nps', () => {
         const dto: NPSMessageDTO = {
-            id: '1.2.3.4:5678',
+            socketId: '1.2.3.4:5678',
             payload: Buffer.from('test'),
         };
         const response = handleNpsMessage(dto);

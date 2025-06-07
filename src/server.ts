@@ -34,9 +34,11 @@ const EXPRESS_PORT = 8080;
  */
 export interface NPSMessageDTO {
     /** Unique identifier for the client socket (address:port) */
-    id: string;
+    socketId: string;
     /** Any error that occurred during processing, if applicable */
     error?: Error;
+    /** Message ID, if applicable */
+    messageId?: number;
     /** The parsed payload buffer (may be same as data) */
     payload?: Buffer;
     /** Optional: parsed NPS message, if applicable */
@@ -49,12 +51,12 @@ export interface NPSMessageDTO {
  * - For non-HTTP protocols, logs the message and broadcasts it to all connected clients except the sender.
  * - For HTTP protocol, parses the HTTP request, forwards it to an Express server, and writes the full HTTP response back to the TCP client.
  *
- * @param id - A unique identifier for the socket connection, typically the remote address and port.
+ * @param socketId - A unique identifier for the socket connection, typically the remote address and port.
  * @param data - The raw data buffer received from the socket.
  * @param port - The port number on which the data was received.
  * @param socket - The TCP socket instance representing the client connection.
  */
-function handleSocketData(id: string, data: Buffer, port: number, socket: Socket) {
+function handleSocketData(socketId: string, data: Buffer, port: number, socket: Socket) {
     const { protocol, payload, nps } = parsePayload(data);
 
     if (protocol === 'HTTP') {
@@ -65,11 +67,12 @@ function handleSocketData(id: string, data: Buffer, port: number, socket: Socket
     logger.info(getParsedPayloadLogObject({ port, protocol, payload, nps }), 'Message received');
 
     // Only handle NPS messages
-    if (protocol === 'NPS') {
-        processNpsMessage({ id, payload, nps: nps || undefined }, socket, port);
+    if (protocol === 'NPS' && nps) {
+        // Process the NPS message and send a response if applicable
+        processNpsMessage({ socketId, messageId: nps.msgId, payload, nps, }, socket, port);
     } else {
         // For other protocols, just log for now
-        logger.info({ port, id, protocol }, 'No handler for protocol');
+        logger.info({ port, id: socketId, protocol }, 'No handler for protocol');
     }
 }
 
@@ -83,18 +86,18 @@ function handleSocketData(id: string, data: Buffer, port: number, socket: Socket
  * @param port - The port number on which the message was received, used for logging purposes.
  */
 function processNpsMessage(dto: NPSMessageDTO, socket: Socket, port: number) {
-    logger.info({ port, id: dto.id, nps: dto.nps }, 'Parsed NPS message');
+    logger.info({ port, id: dto.socketId, nps: dto.nps }, 'Parsed NPS message');
     const responseDto = handleNpsMessage(dto);
     if (responseDto?.payload) {
-        logger.info({ port, id: dto.id }, 'Sending response for NPS message');
+        logger.info({ port, id: dto.socketId }, 'Sending response for NPS message');
         const responseBuffer = Buffer.isBuffer(responseDto.payload)
             ? responseDto.payload
             : Buffer.from(responseDto.payload);
         socket.write(responseBuffer);
     } else if (responseDto?.error) {
-        logger.error({ port, id: dto.id, error: responseDto.error }, 'Error processing NPS message');
+        logger.error({ port, id: dto.socketId, error: responseDto.error }, 'Error processing NPS message');
     } else {
-        logger.info({ port, id: dto.id }, 'No response for NPS message');
+        logger.info({ port, id: dto.socketId }, 'No response for NPS message');
     }
 }
 

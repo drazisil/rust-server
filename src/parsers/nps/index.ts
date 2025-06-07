@@ -20,7 +20,7 @@ import { parseLoginRequestMessage } from "./LoginRequestMessage";
 // This file defines the NPS (Network Protocol Specification) message structure and parser.
 
 export interface NPSMessage {
-    msgId: string; // Message ID (first 2 bytes of the header)
+    msgId: number; // Message ID (first 2 bytes of the header)
     msgLength: number;     // Length of the NPS record (from header)
     body?: any;        // The parsed body of the message, can be JSON or other structured data
 }
@@ -39,7 +39,7 @@ export function parseNPSRawMessage(buf: Buffer): NPSMessage | null {
     const body = buf.subarray(4, msgLength);
 
     return {
-        msgId: `Unknown(${msgId})`,
+        msgId,
         msgLength,
         body,
     };

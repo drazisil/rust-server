@@ -38,7 +38,7 @@ describe('parseLoginRequestMessage', () => {
     expect(buf.length).toBe(totalLen);
     const result = parseLoginRequestMessage(buf);
     expect(result).not.toBeNull();
-    expect(result?.msgId).toBe('0501');
+    expect(result?.msgId).toBe(0x501);
     expect(result?.body.username).toBe('admin');
     expect(result?.body.sessionKey).toBe(Buffer.from('abcd', 'utf8').toString('hex'));
     expect(result?.body.usernameLength).toBe(5);

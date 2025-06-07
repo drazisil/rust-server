@@ -16,7 +16,7 @@ export function handleNpsMessage(dto: NPSMessageDTO): NPSMessageDTO | undefined 
     if (dto.nps && dto.payload) {
         // Echo the payload as a response
         return {
-            id: dto.id,
+            socketId: dto.socketId,
             payload: dto.payload,
             nps: undefined
         };

@@ -58,7 +58,7 @@ export interface LoginRequestPayload {
 }
 
 export interface LoginRequestMessage {
-    msgId: string; // Message ID (first 2 bytes of the header)
+    msgId: number; // Message ID (first 2 bytes of the header)
     msgLength: number; // Length of the NPS record (from header)
     body: LoginRequestPayload; // Parsed body of the message
 }
@@ -67,7 +67,7 @@ export interface LoginRequestMessage {
 
 export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | null {
     if (buf.length < 4) return null;
-    const msgId = '0501';
+    const msgId = 0x501;
     const msgLength = buf.readUInt16BE(2);
     if (buf.length < msgLength) return null;
     const schema = [
