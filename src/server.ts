@@ -27,10 +27,10 @@ const clients: net.Socket[] = [];
 const EXPRESS_PORT = 8080;
 
 function handleSocketData(data: Buffer, port: number, socket: net.Socket) {
-                const { protocol, payload, tls, ssl3, nps } = parsePayload(data);
+                const { protocol, payload, tls, nps } = parsePayload(data);
                 // Only log non-HTTP requests before forwarding
                 if (protocol !== 'HTTP') {
-                    logger.info(getParsedPayloadLogObject({ port, protocol, payload, tls, ssl3, nps }), 'Message received');
+                    logger.info(getParsedPayloadLogObject({ port, protocol, payload, tls, nps }), 'Message received');
                 }
                 // Forward HTTP requests to Express
                 if (protocol === 'HTTP') {

@@ -69,8 +69,8 @@ program
   .description('Parse a hex-encoded payload')
   .action((hexstring) => {
     try {
-      const { protocol, payload, tls, ssl3, nps } = parsePayload(hexstring);
-      logParsedPayload({ protocol, payload, tls, ssl3, nps });
+      const { protocol, payload, tls, nps } = parsePayload(hexstring);
+      logParsedPayload({ protocol, payload, tls, nps });
     } catch (e) {
       if (e instanceof Error) {
         console.error('Failed to parse payload:', e.message);
