@@ -71,7 +71,7 @@ export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | nul
 
     let offset = 4; // Start after the header
 
-    // Helper to safely read a value and advance offset
+    // Helper functions
     function safeReadUInt16(): number | null {
         if (offset + 2 > buf.length) {
             console.warn(`LoginRequestMessage: Buffer too short for reading 2 bytes at offset ${offset}`);
@@ -103,29 +103,52 @@ export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | nul
         return val;
     }
 
-    // Parse fields in order, with clear names
-    const version = safeReadUInt16();
-    if (version === null) return null;
-    const reserved1 = safeReadUInt16();
-    if (reserved1 === null) return null;
-    const checksum = safeReadUInt32();
-    if (checksum === null) return null;
-    const usernameLength = safeReadUInt16();
-    if (usernameLength === null) return null;
-    const username = safeReadString(usernameLength);
-    if (username === null) return null;
-    const reserved2 = safeReadUInt16();
-    if (reserved2 === null) return null;
-    const sessionKeyLength = safeReadUInt16();
-    if (sessionKeyLength === null) return null;
-    const sessionKey = safeReadHex(sessionKeyLength);
-    if (sessionKey === null) return null;
-    const gameIdLength = safeReadUInt16();
-    if (gameIdLength === null) return null;
-    const gameId = safeReadString(gameIdLength);
-    if (gameId === null) return null;
-    const reserved3 = safeReadUInt32();
-    if (reserved3 === null) return null;
+    // Field schema for extensibility
+    const schema = [
+        { name: 'version', type: 'u16' },
+        { name: 'reserved1', type: 'u16' },
+        { name: 'checksum', type: 'u32' },
+        { name: 'usernameLength', type: 'u16' },
+        { name: 'username', type: 'string', lengthFrom: 'usernameLength' },
+        { name: 'reserved2', type: 'u16' },
+        { name: 'sessionKeyLength', type: 'u16' },
+        { name: 'sessionKey', type: 'hex', lengthFrom: 'sessionKeyLength' },
+        { name: 'gameIdLength', type: 'u16' },
+        { name: 'gameId', type: 'string', lengthFrom: 'gameIdLength' },
+        { name: 'reserved3', type: 'u32' },
+    ] as const;
+
+    // Parse according to schema
+    const parsed: Record<string, any> = {};
+    for (const field of schema) {
+        let value: any = null;
+        switch (field.type) {
+            case 'u16':
+                value = safeReadUInt16();
+                break;
+            case 'u32':
+                value = safeReadUInt32();
+                break;
+            case 'string': {
+                if (!('lengthFrom' in field)) return null;
+                const len = parsed[field.lengthFrom];
+                if (typeof len !== 'number') return null;
+                value = safeReadString(len);
+                break;
+            }
+            case 'hex': {
+                if (!('lengthFrom' in field)) return null;
+                const len = parsed[field.lengthFrom];
+                if (typeof len !== 'number') return null;
+                value = safeReadHex(len);
+                break;
+            }
+            default:
+                return null;
+        }
+        if (value === null) return null;
+        parsed[field.name] = value;
+    }
 
     // After parsing, offset should be equal to buf.length (not msgLength)
     if (offset !== buf.length) {
@@ -137,10 +160,10 @@ export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | nul
         msgId,
         msgLength,
         body: {
-            usernameLength,
-            username,
-            sessionKeyLength,
-            sessionKey,
+            usernameLength: parsed.usernameLength,
+            username: parsed.username,
+            sessionKeyLength: parsed.sessionKeyLength,
+            sessionKey: parsed.sessionKey,
         },
     };
 }
