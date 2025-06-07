@@ -49,7 +49,7 @@ function handleSocketData(data: Buffer, port: number, socket: net.Socket) {
         // Extract body if present
         let body: Buffer | undefined = undefined;
         if (headerEndIndex !== -1 && headerEndIndex + 4 < data.length) {
-            body = data.slice(headerEndIndex + 4);
+            body = data.subarray(headerEndIndex + 4);
         }
         // Forward to Express using http.request
         const options = {
