@@ -2,12 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { detectProtocol } from './tcp';
 
 describe('detectProtocol', () => {
-    it('detects SSL3 protocol', () => {
-        // 0x16 0x03 0x00 ...
-        const buf = Buffer.from([0x16, 0x03, 0x00, 0x01]);
-        expect(detectProtocol(buf)).toBe('SSL3');
-    });
-
     it('detects TLS protocol (0x16 0x03 0x01)', () => {
         const buf = Buffer.from([0x16, 0x03, 0x01, 0x00]);
         expect(detectProtocol(buf)).toBe('TLS');

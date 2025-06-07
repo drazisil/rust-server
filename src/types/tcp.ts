@@ -20,18 +20,14 @@ import { parseTlsHandshakePayload, TlsHandshakePayload } from './tls';
 /**
  * Detects the protocol of a given buffer by inspecting its initial bytes.
  *
- * This function attempts to identify common protocols such as SSL3, TLS, HTTP, NPS, and SSH
+ * This function attempts to identify common protocols such as TLS, HTTP, NPS, and SSH
  * based on the structure and content of the provided buffer. If none of the known patterns match,
  * it returns 'Unknown'.
  *
  * @param buf - The buffer containing the initial bytes of a network packet or stream.
- * @returns The detected protocol as a string: 'SSL3', 'TLS', 'HTTP', 'NPS', 'SSH', or 'Unknown'.
+ * @returns The detected protocol as a string: 'TLS', 'HTTP', 'NPS', 'SSH', or 'Unknown'.
  */
 export function detectProtocol(buf: Buffer): string {
-    // SSL 3.0 handshake detection: contentType=0x16, versionMajor=3, versionMinor=0
-    if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && buf[2] === 0x00) {
-        return 'SSL3';
-    }
     // TLS handshake (ClientHello) usually starts with 0x16 0x03 0x01 - 0x16 0x03 0x04
     if (buf.length > 3 && buf[0] === 0x16 && buf[1] === 0x03 && (buf[2] === 0x01 || buf[2] === 0x02 || buf[2] === 0x03 || buf[2] === 0x04)) {
         return 'TLS';
