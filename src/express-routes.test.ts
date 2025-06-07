@@ -3,6 +3,9 @@ import request from 'supertest';
 import app from './express-app';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { defineShardModel } from './shardModel.js';
+import express from 'express';
+import { createShardListRouter } from './routes/shardlist';
+
 import { Sequelize } from 'sequelize';
 
 // You may want to mock DB or seed test data for /AuthLogin and /ShardList
@@ -28,9 +31,12 @@ describe('Express routes', () => {
     });
     const TestShard = defineShardModel(testSequelize);
 
+    // Create a test-only express app with the test router
+    const testApp = express();
+    testApp.use(createShardListRouter(TestShard));
+
     beforeAll(async () => {
       await testSequelize.sync({ force: true });
-
       // Seed a test shard if none exist
       await TestShard.create({
         id: 1,
@@ -51,7 +57,7 @@ describe('Express routes', () => {
       });
     });
     it('should return 200 and a text response', async () => {
-      const res = await request(app).get('/ShardList/');
+      const res = await request(testApp).get('/ShardList/');
       expect(res.status).toBe(200);
       expect(res.type).toMatch(/text/);
       expect(res.text).toMatch(/\[.*\]([\s\S]*ShardId=)/); // crude check for shard format

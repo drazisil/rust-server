@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // ShardList route module
 import { Router } from 'express';
-import { getAllShards } from '../shards';
-
-const shardListRouter = Router();
+import { getAllShards, Shard } from '../shards';
 
 // Data structure for a shard entry
 export interface ShardEntry {
@@ -43,17 +41,22 @@ export function formatShardEntry(shard: ShardEntry): string {
         `      DiagnosticServerPort=${shard.diagnosticServerPort}`;
 }
 
-// ShardList route: returns a static list of shards
-shardListRouter.get('/ShardList/', async (req, res) => {
-    try {
-        const shards = await getAllShards();
-        // Convert Sequelize model instances to plain objects if needed
-        const shardEntries = shards.map(s => s.toJSON ? s.toJSON() : s);
-        const shardListString = shardEntries.map(formatShardEntry).join('\n\n');
-        res.status(200).type('text').send(shardListString);
-    } catch (err) {
-        res.status(500).type('text').send('Failed to fetch shard list');
-    }
-});
+// Factory to create a ShardList router with a custom model (for testing)
+export function createShardListRouter(ShardModel = Shard) {
+    const router = Router();
+    router.get('/ShardList/', async (req, res) => {
+        try {
+            const shards = await getAllShards(ShardModel);
+            const shardEntries = shards.map(s => s.toJSON ? s.toJSON() : s);
+            const shardListString = shardEntries.map(formatShardEntry).join('\n\n');
+            res.status(200).type('text').send(shardListString);
+        } catch (err) {
+            res.status(500).type('text').send('Failed to fetch shard list');
+        }
+    });
+    return router;
+}
 
+// Default export for production app
+const shardListRouter = createShardListRouter();
 export default shardListRouter;
