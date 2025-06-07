@@ -14,26 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { parseTlsHandshakePayload } from './tls';
 import { parseNPSMessage } from './nps';
 import { detectProtocol } from './tcp';
 
-export function logParsedPayload({ protocol, payload, tls, nps }: { protocol: string; payload: Buffer; tls?: any; nps?: any }) {
+export function logParsedPayload({ protocol, payload, nps }: { protocol: string; payload: Buffer; nps?: any }) {
     console.log('Detected Protocol:', protocol);
     console.log('Payload (hex):', payload.toString('hex'));
     console.log('Payload (ascii):', payload.toString('ascii'));
-    if (protocol === 'TLS' && tls) {
-        console.log('TLS Handshake Payload:', JSON.stringify(tls, null, 2));
-    } else if (protocol === 'NPS' && nps) {
+    if (protocol === 'NPS' && nps) {
         console.log('NPS Message:', JSON.stringify(nps, null, 2));
     }
 }
 
-export function getParsedPayloadLogObject({ port, protocol, payload, tls, nps }: { port: number; protocol: string; payload: Buffer; tls?: any; nps?: any }) {
+export function getParsedPayloadLogObject({ port, protocol, payload, nps }: { port: number; protocol: string; payload: Buffer; nps?: any }) {
     const logObj: any = { port, protocol, payloadHex: payload.toString('hex'), payloadAscii: payload.toString('ascii') };
-    if (protocol === 'TLS' && tls) {
-        logObj.tls = tls;
-    } else if (protocol === 'NPS' && nps) {
+    if (protocol === 'NPS' && nps) {
         logObj.nps = nps;
     }
     return logObj;
@@ -54,24 +49,21 @@ export interface User {
 
 /**
  * Parses a hexadecimal string or Buffer payload and detects its protocol type.
- * Depending on the detected protocol (TLS or NPS), it further parses the payload
+ * Depending on the detected protocol (NPS), it further parses the payload
  * using the appropriate parser and returns the parsed result.
  *
  * @param hex - The payload to parse, provided as a hexadecimal string or Buffer.
  * @returns An object containing:
  * - `protocol`: The detected protocol as a string.
  * - `payload`: The original payload as a Buffer.
- * - `tls`: The parsed TLS handshake payload, if applicable.
  * - `nps`: The parsed NPS message, if applicable.
  */
-export function parsePayload(hex: string | Buffer): { protocol: string; payload: Buffer; tls?: ReturnType<typeof parseTlsHandshakePayload>; nps?: ReturnType<typeof parseNPSMessage> } {
+export function parsePayload(hex: string | Buffer): { protocol: string; payload: Buffer; nps?: ReturnType<typeof parseNPSMessage> } {
     const buf = typeof hex === 'string' ? Buffer.from(hex, 'hex') : hex;
     let protocol = detectProtocol(buf);
-    let tls, nps;
-    if (protocol === 'TLS') {
-        tls = parseTlsHandshakePayload(buf) || undefined;
-    } else if (protocol === 'NPS') {
+    let nps;
+    if (protocol === 'NPS') {
         nps = parseNPSMessage(buf);
     }
-    return { protocol, payload: buf, tls, nps };
+    return { protocol, payload: buf, nps };
 }
