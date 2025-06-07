@@ -49,19 +49,14 @@ export function parseNPSMessage(buf: Buffer): NPSMessage | null {
     if (buf.length < 4) return null;
     // NPS header: 4 bytes (2-byte ID, 2-byte length)
     const id = buf.readUInt16BE(0);
-    console.log(`Parsing NPS message with ID: ${id.toString(16).toUpperCase()}`);
 
     // Use the parser for the specific NPS message ID
     let parser = NPS_MESSAGE_PARSER_MAP.find(p => p.id === id)?.parser;
     if (!parser) {
-        console.warn(`Parser not found for NPS message ID: ${id.toString(16).toUpperCase()}`);
-        console.warn(`Searched parsers:`, NPS_MESSAGE_PARSER_MAP.map(p => p.id.toString(16).toUpperCase()));
         parser = parseNPSRawMessage; // Fallback to raw parser if not found
     }
     
-    console.log(`Using parser ${parser.name} for NPS message ID: ${id.toString(16).toUpperCase()}`);
     const message = parser(buf);
-    console.log(`Parsed NPS message:`, message);
     if (!message) return null;
     
     return {
