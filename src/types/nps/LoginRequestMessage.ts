@@ -70,41 +70,63 @@ export function parseLoginRequestMessage(buf: Buffer): LoginRequestMessage | nul
     if (buf.length < msgLength) return null; // Ensure buffer is long enough
 
     let offset = 4; // Start after the header
-    function safeRead(fn: () => any, needed: number): any | null {
-        if (offset + needed > buf.length) {
-            console.warn(`LoginRequestMessage: Buffer too short for reading ${needed} bytes at offset ${offset}`);
+
+    // Helper to safely read a value and advance offset
+    function safeReadUInt16(): number | null {
+        if (offset + 2 > buf.length) {
+            console.warn(`LoginRequestMessage: Buffer too short for reading 2 bytes at offset ${offset}`);
             return null;
         }
-        const val = fn();
-        offset += needed;
+        const val = buf.readUInt16BE(offset);
+        offset += 2;
+        return val;
+    }
+    function safeReadUInt32(): number | null {
+        if (offset + 4 > buf.length) {
+            console.warn(`LoginRequestMessage: Buffer too short for reading 4 bytes at offset ${offset}`);
+            return null;
+        }
+        const val = buf.readUInt32BE(offset);
+        offset += 4;
+        return val;
+    }
+    function safeReadString(len: number, encoding: BufferEncoding = 'utf8'): string | null {
+        if (offset + len > buf.length) return null;
+        const val = buf.toString(encoding, offset, offset + len);
+        offset += len;
+        return val;
+    }
+    function safeReadHex(len: number): string | null {
+        if (offset + len > buf.length) return null;
+        const val = buf.toString('hex', offset, offset + len);
+        offset += len;
         return val;
     }
 
-    const version = safeRead(() => buf.readUInt16BE(offset), 2);
+    // Parse fields in order, with clear names
+    const version = safeReadUInt16();
     if (version === null) return null;
-    const reserved1 = safeRead(() => buf.readUInt16BE(offset), 2);
+    const reserved1 = safeReadUInt16();
     if (reserved1 === null) return null;
-    const checksum = safeRead(() => buf.readUInt32BE(offset), 4);
+    const checksum = safeReadUInt32();
     if (checksum === null) return null;
-    const usernameLength = safeRead(() => buf.readUInt16BE(offset), 2);
+    const usernameLength = safeReadUInt16();
     if (usernameLength === null) return null;
-    if (offset + usernameLength > buf.length) return null;
-    const username = buf.toString('utf8', offset, offset + usernameLength);
-    offset += usernameLength;
-    const reserved2 = safeRead(() => buf.readUInt16BE(offset), 2);
+    const username = safeReadString(usernameLength);
+    if (username === null) return null;
+    const reserved2 = safeReadUInt16();
     if (reserved2 === null) return null;
-    const sessionKeyLength = safeRead(() => buf.readUInt16BE(offset), 2);
+    const sessionKeyLength = safeReadUInt16();
     if (sessionKeyLength === null) return null;
-    if (offset + sessionKeyLength > buf.length) return null;
-    const sessionKey = buf.toString('hex', offset, offset + sessionKeyLength);
-    offset += sessionKeyLength;
-    const gameIdLength = safeRead(() => buf.readUInt16BE(offset), 2);
+    const sessionKey = safeReadHex(sessionKeyLength);
+    if (sessionKey === null) return null;
+    const gameIdLength = safeReadUInt16();
     if (gameIdLength === null) return null;
-    if (offset + gameIdLength > buf.length) return null;
-    const gameId = buf.toString('utf8', offset, offset + gameIdLength);
-    offset += gameIdLength;
-    const reserved3 = safeRead(() => buf.readUInt32BE(offset), 4);
+    const gameId = safeReadString(gameIdLength);
+    if (gameId === null) return null;
+    const reserved3 = safeReadUInt32();
     if (reserved3 === null) return null;
+
     // After parsing, offset should be equal to buf.length (not msgLength)
     if (offset !== buf.length) {
         console.warn(`LoginRequestMessage: Parsed length ${offset} does not match buffer length ${buf.length}`);
