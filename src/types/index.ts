@@ -68,7 +68,8 @@ export function parsePayload(hex: string | Buffer): { protocol: string; payload:
     } else if (protocol === 'TLS') {
         tls = parseTlsHandshakePayload(buf) || undefined;
     } else if (protocol === 'NPS') {
-        nps = parseNPSMessage(buf) || undefined;
+        nps = parseNPSMessage(buf);
+        console.log(`Parsed NPS message: ${nps}`);
     }
     return { protocol, payload: buf, tls, ssl3, nps };
 }

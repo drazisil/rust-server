@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import request from 'supertest';
-import app from '../src/express-app';
+import app from './express-app';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { defineShardModel } from '../src/shardModel.js';
+import { defineShardModel } from './shardModel.js';
 import { Sequelize } from 'sequelize';
 
 // You may want to mock DB or seed test data for /AuthLogin and /ShardList
