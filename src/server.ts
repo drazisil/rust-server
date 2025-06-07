@@ -45,9 +45,23 @@ function handleSocketData(data: Buffer, port: number, socket: Socket) {
 
     // Log and broadcast non-HTTP messages
     logger.info(getParsedPayloadLogObject({ port, protocol, payload, nps }), 'Message received');
-    broadcastToClients(payload, socket);
 }
 
+/**
+ * Forwards a raw HTTP request received over a socket to an Express server,
+ * acting as a simple HTTP proxy. Parses the incoming HTTP request from the socket,
+ * reconstructs the request, and sends it to the Express server running on the specified port.
+ * The response from the Express server is then written back to the original socket.
+ *
+ * @param data - The raw HTTP request data received from the client socket.
+ * @param socket - The socket through which the original HTTP request was received and to which the response will be sent.
+ *
+ * @remarks
+ * - Assumes the Express server is running locally on `127.0.0.1` and listening on `EXPRESS_PORT`.
+ * - Handles both request headers and body.
+ * - Forwards the response headers and body from the Express server back to the client.
+ * - Logs errors and closes the socket on failure.
+ */
 function forwardHttpToExpress(data: Buffer, socket: Socket) {
     const requestString = data.toString('utf8');
     const [requestLine, ...headerLines] = requestString.split(/\r?\n/);
@@ -98,14 +112,21 @@ function forwardHttpToExpress(data: Buffer, socket: Socket) {
     req.end();
 }
 
-function broadcastToClients(payload: Buffer, sender: Socket) {
-    clients.forEach((client) => {
-        if (client !== sender) {
-            client.write(payload + '\n');
-        }
-    });
-}
-
+/**
+ * Initializes a TCP server that listens on the specified port and manages client connections.
+ *
+ * @param port - The port number on which the TCP server will listen.
+ *
+ * The server handles the following events for each client socket:
+ * - 'data': Processes incoming data using `handleSocketData`. If an error occurs, logs the error and closes the socket.
+ * - 'end': Logs client disconnection and removes the client from the active clients list.
+ * - 'error': Logs socket errors.
+ *
+ * The server itself also listens for:
+ * - 'error': Logs errors that occur while binding the server to the port.
+ *
+ * All connections and events are logged using the `logger` instance.
+ */
 function initializeTcpServers(port: number) {
     const server = createServer((socket: Socket) => {
         clients.push(socket);
