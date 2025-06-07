@@ -20,10 +20,28 @@ import { createLogger } from './logger';
 import { getParsedPayloadLogObject, parsePayload } from './parsers';
 import { request } from 'node:http';
 import { bootstrapInitialRecords } from './bootstrap';
+import { NPSMessage } from './parsers/nps';
+import { handleNpsMessage } from './nps-handler';
 
 const logger = createLogger('server');
-const clients: Socket[] = [];
+const clients: Map<string, Socket> = new Map();
 const EXPRESS_PORT = 8080;
+
+/**
+ * Data Transfer Object for NPS messages received over TCP sockets.
+ * This interface represents the structure of a message received from a client socket,
+ * including the unique identifier for the socket, the raw payload buffer, and an optional parsed NPS message.
+ */
+export interface NPSMessageDTO {
+    /** Unique identifier for the client socket (address:port) */
+    id: string;
+    /** Any error that occurred during processing, if applicable */
+    error?: Error;
+    /** The parsed payload buffer (may be same as data) */
+    payload?: Buffer;
+    /** Optional: parsed NPS message, if applicable */
+    nps?: NPSMessage;
+}
 
 /**
  * Handles incoming data on a TCP socket, parses the protocol, and processes the message accordingly.
@@ -31,11 +49,12 @@ const EXPRESS_PORT = 8080;
  * - For non-HTTP protocols, logs the message and broadcasts it to all connected clients except the sender.
  * - For HTTP protocol, parses the HTTP request, forwards it to an Express server, and writes the full HTTP response back to the TCP client.
  *
+ * @param id - A unique identifier for the socket connection, typically the remote address and port.
  * @param data - The raw data buffer received from the socket.
  * @param port - The port number on which the data was received.
  * @param socket - The TCP socket instance representing the client connection.
  */
-function handleSocketData(data: Buffer, port: number, socket: Socket) {
+function handleSocketData(id: string, data: Buffer, port: number, socket: Socket) {
     const { protocol, payload, nps } = parsePayload(data);
 
     if (protocol === 'HTTP') {
@@ -45,6 +64,40 @@ function handleSocketData(data: Buffer, port: number, socket: Socket) {
 
     // Log and broadcast non-HTTP messages
     logger.info(getParsedPayloadLogObject({ port, protocol, payload, nps }), 'Message received');
+
+    // Create a DTO for the NPS message
+    const dto: NPSMessageDTO = {
+        id,
+        payload,
+        nps: nps ? nps : undefined
+    };
+
+    logger.info({ port, id, nps: dto.nps }, 'Parsed NPS message');
+
+    // Handle NPS messages
+    const responseDto = handleNpsMessage(dto);
+
+    // Handle any responses
+    if (typeof responseDto === 'object' && responseDto.payload) {
+        // If a response is needed, write it back to the socket
+        logger.info({ port, id }, 'Sending response for NPS message');
+        // Ensure the payload is a Buffer
+        if (!(responseDto.payload instanceof Buffer)) {
+            logger.warn({ port, id }, 'Response payload is not a Buffer, converting to Buffer');
+            responseDto.payload = Buffer.from(responseDto.payload);
+        }
+        const responseBuffer = Buffer.from(responseDto.payload);
+        socket.write(responseBuffer);
+    } else {
+        // Che for any errors in the response DTO
+        if (responseDto && responseDto.error) {
+            logger.error({ port, id, error: responseDto.error }, 'Error processing NPS message');
+            return;
+        }
+
+        // If no response is needed, just log the received message
+        logger.info({ port, id }, 'No response for NPS message');
+    }
 }
 
 /**
@@ -129,12 +182,15 @@ function forwardHttpToExpress(data: Buffer, socket: Socket) {
  */
 function initializeTcpServers(port: number) {
     const server = createServer((socket: Socket) => {
-        clients.push(socket);
+        // Generate a unique identifier for the client
+        const socketId = `${socket.remoteAddress}:${socket.remotePort}`;
+
+        clients.set(socketId, socket);
         logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client connected');
 
         socket.on('data', (data: Buffer) => {
             try {
-                handleSocketData(data, port, socket);
+                handleSocketData(socketId, data, port, socket);
             } catch (err) {
                 logger.error({ port, err }, 'Error handling socket data');
                 socket.end();
@@ -143,9 +199,7 @@ function initializeTcpServers(port: number) {
 
         socket.on('end', () => {
             logger.info({ port, remoteAddress: socket.remoteAddress, remotePort: socket.remotePort }, 'Client disconnected');
-            // Remove the client from the list
-            const idx = clients.indexOf(socket);
-            if (idx !== -1) clients.splice(idx, 1);
+            clients.delete(socketId);
         });
 
         socket.on('error', (err: Error) => {
