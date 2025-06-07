@@ -36,9 +36,6 @@ export function detectProtocol(buf: Buffer): string {
     // This might be an NPS packet, which has a length field at offset 2
         return 'NPS';
     }
-    if (ascii.startsWith('SSH-')) {
-        return 'SSH';
-    }
     // Default: unknown
     return 'Unknown';
 }
@@ -50,28 +47,4 @@ export function parsePayload(hex: string | Buffer): {
     const buf = typeof hex === 'string' ? Buffer.from(hex, 'hex') : hex;
     const protocol = detectProtocol(buf);
     return { protocol, payload: buf };
-}
-
-export interface SshPayload {
-    protocolVersion: string; // e.g. 'SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.3'
-    softwareVersion?: string;
-    comments?: string;
-}
-
-export function parseSshPayload(buf: Buffer): SshPayload | null {
-    const ascii = buf.toString('ascii');
-    if (ascii.startsWith('SSH-')) {
-        // SSH identification string: 'SSH-protoversion-softwareversion [comments]\r\n'
-        // See RFC 4253 section 4.2
-        const line = ascii.split('\r\n')[0] || ascii.split('\n')[0];
-        const [protocolVersion, ...rest] = line.split(' ');
-        const [proto, softwareVersion] = protocolVersion.split('-').slice(1);
-        const comments = rest.join(' ');
-        return {
-            protocolVersion: protocolVersion,
-            softwareVersion,
-            comments: comments || undefined,
-        };
-    }
-    return null;
 }

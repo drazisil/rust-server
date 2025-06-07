@@ -18,11 +18,6 @@ describe('detectProtocol', () => {
         expect(detectProtocol(buf)).toBe('NPS');
     });
 
-    it('detects SSH protocol', () => {
-        const buf = Buffer.from('SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.3\r\n', 'ascii');
-        expect(detectProtocol(buf)).toBe('SSH');
-    });
-
     it('returns Unknown for unrecognized protocol', () => {
         const buf = Buffer.from([0x01, 0x02, 0x03, 0x04]);
         expect(detectProtocol(buf)).toBe('Unknown');
