@@ -62,41 +62,39 @@ function handleSocketData(id: string, data: Buffer, port: number, socket: Socket
         return;
     }
 
-    // Log and broadcast non-HTTP messages
     logger.info(getParsedPayloadLogObject({ port, protocol, payload, nps }), 'Message received');
 
-    // Create a DTO for the NPS message
-    const dto: NPSMessageDTO = {
-        id,
-        payload,
-        nps: nps ? nps : undefined
-    };
-
-    logger.info({ port, id, nps: dto.nps }, 'Parsed NPS message');
-
-    // Handle NPS messages
-    const responseDto = handleNpsMessage(dto);
-
-    // Handle any responses
-    if (typeof responseDto === 'object' && responseDto.payload) {
-        // If a response is needed, write it back to the socket
-        logger.info({ port, id }, 'Sending response for NPS message');
-        // Ensure the payload is a Buffer
-        if (!(responseDto.payload instanceof Buffer)) {
-            logger.warn({ port, id }, 'Response payload is not a Buffer, converting to Buffer');
-            responseDto.payload = Buffer.from(responseDto.payload);
-        }
-        const responseBuffer = Buffer.from(responseDto.payload);
-        socket.write(responseBuffer);
+    // Only handle NPS messages
+    if (protocol === 'NPS') {
+        processNpsMessage({ id, payload, nps: nps || undefined }, socket, port);
     } else {
-        // Che for any errors in the response DTO
-        if (responseDto && responseDto.error) {
-            logger.error({ port, id, error: responseDto.error }, 'Error processing NPS message');
-            return;
-        }
+        // For other protocols, just log for now
+        logger.info({ port, id, protocol }, 'No handler for protocol');
+    }
+}
 
-        // If no response is needed, just log the received message
-        logger.info({ port, id }, 'No response for NPS message');
+/**
+ * Processes an NPS (Network Play System) message received over a socket connection.
+ *
+ * Logs the received message, handles it, and sends a response or logs an error as appropriate.
+ *
+ * @param dto - The NPS message data transfer object containing the message details.
+ * @param socket - The socket through which the message was received and to which the response will be sent.
+ * @param port - The port number on which the message was received, used for logging purposes.
+ */
+function processNpsMessage(dto: NPSMessageDTO, socket: Socket, port: number) {
+    logger.info({ port, id: dto.id, nps: dto.nps }, 'Parsed NPS message');
+    const responseDto = handleNpsMessage(dto);
+    if (responseDto?.payload) {
+        logger.info({ port, id: dto.id }, 'Sending response for NPS message');
+        const responseBuffer = Buffer.isBuffer(responseDto.payload)
+            ? responseDto.payload
+            : Buffer.from(responseDto.payload);
+        socket.write(responseBuffer);
+    } else if (responseDto?.error) {
+        logger.error({ port, id: dto.id, error: responseDto.error }, 'Error processing NPS message');
+    } else {
+        logger.info({ port, id: dto.id }, 'No response for NPS message');
     }
 }
 
