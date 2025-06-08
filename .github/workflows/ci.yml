@@ -31,6 +31,14 @@ jobs:
         run: |
           make
 
+      - name: Build Google Test
+        run: |
+          cd third_party/googletest
+          mkdir -p build
+          cd build
+          cmake ..
+          make
+
       - name: Run tests
         run: |
           make check || true
