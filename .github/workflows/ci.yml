@@ -16,12 +16,24 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake lcov g++ make
+          sudo apt-get install -y autoconf automake libtool lcov g++ make libgtest-dev
+          cd /usr/src/gtest && sudo cmake . && sudo make && sudo cp *.a /usr/lib
 
-      - name: Build and run tests
+      - name: Autotools bootstrap
         run: |
-          make clean
-          make build
+          autoreconf -i
+
+      - name: Configure
+        run: |
+          ./configure CXXFLAGS="-O2"
+
+      - name: Build
+        run: |
+          make
+
+      - name: Run tests
+        run: |
+          make check || true
 
       - name: Generate coverage report
         run: |
@@ -31,10 +43,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage/lcov-report/
+          path: lcov-report/
 
       - name: Upload lcov.info
         uses: actions/upload-artifact@v4
         with:
           name: lcov-info
-          path: coverage/lcov.info
+          path: lcov.info

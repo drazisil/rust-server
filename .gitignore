@@ -1,49 +1,30 @@
+# Autotools build artifacts
+Makefile.in
+Makefile
+aclocal.m4
+config.h.in
+config.h
+config.log
+config.status
+autom4te.cache/
+depcomp
+install-sh
+missing
+stamp-h1
+compile
+test_server
+oxide
+
 # CMake build artifacts
 build/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-Makefile
-CMakeScripts/
-Testing/
-CTestTestfile.cmake
-install_manifest.txt
 compile_commands.json
 
-# Compiled object files, libraries, executables
-*.o
-*.obj
-*.so
-*.a
-*.lib
-*.dll
-*.exe
-*.out
-*.app
-*.dylib
-
-# Generated files
-*.moc
-*.qrc
-*.rcc
-*.ninja
-*.mod.c
-*.mod.cpp
-
-# IDE and editor files
-*.swp
-*.swo
-*.user
-*.user.*
-*.sublime*
-*.vscode/
-.idea/
-*.DS_Store
-*.directory
-
 # Coverage and test output
-coverage/
 lcov.info
+lcov-report/
 *.gcda
 *.gcno
 *.gcov
@@ -52,10 +33,21 @@ lcov.info
 logs/
 *.log
 
-# Other
-*.bak
-*.tmp
-*.old
+# Node/TypeScript (if any JS/TS code remains)
+node_modules/
+dist/
+*.tsbuildinfo
 
-# Ignore binaries
-my-socket-server
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.user
+*.DS_Store
+
+# Misc
+*.o
+*.lo
+*.la
+*.in
