@@ -25,6 +25,23 @@ cmake --build build
 ./build/oxide
 ```
 
+### Running Tests
+
+Unit tests are built and run using either CMake or autotools. **GoogleTest is vendored in `third_party/googletest` and built from source automatically; you do NOT need to install any system gtest package.**
+
+- With autotools:
+  ```sh
+  autoreconf -i
+  ./configure
+  make check
+  ```
+- With CMake:
+  ```sh
+  cmake -S . -B build
+  cmake --build build
+  ctest --test-dir build
+  ```
+
 ## Features
 - Handles multiple TCP ports concurrently using `select()`
 - Simple HTTP response on port 3000
@@ -34,6 +51,7 @@ cmake --build build
 - C++17 or later
 - CMake 3.10+
 - Linux (tested)
+- autotools (autoconf, automake, libtool) for autotools build
 
 ## Project Structure
 - `main.cpp`: Main server implementation in C++
@@ -46,4 +64,4 @@ See `COPYING.md` for license information.
 
 ---
 
-**Note:** This project was previously implemented in Node.js/TypeScript. It is now fully C++ and CMake based.
+**Note:** This project was previously implemented in Node.js/TypeScript. It is now fully C++ and CMake/autotools based. All C++ unit tests use the vendored GoogleTest for maximum reliability and reproducibility.

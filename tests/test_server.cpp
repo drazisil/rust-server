@@ -22,9 +22,3 @@ TEST(ServerTest, CreateListenerValidPort) {
     ASSERT_GT(sock, 0);
     close(sock);
 }
-
-// Main entry for gtest
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
