@@ -14,6 +14,7 @@ stamp-h1
 compile
 test_server
 oxide
+.deps/
 
 # CMake build artifacts
 build/
@@ -28,6 +29,7 @@ lcov-report/
 *.gcda
 *.gcno
 *.gcov
+*.trs
 
 # Logs
 logs/
