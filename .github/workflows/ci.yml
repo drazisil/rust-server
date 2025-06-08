@@ -2,30 +2,39 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [ 'lts/*', 'current' ]
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
       - name: Install dependencies
-        run: npm install
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake lcov g++ make
 
-      - name: Build
-        run: npm run build
+      - name: Build and run tests
+        run: |
+          make clean
+          make build
 
-      - name: Run tests
-        run: npm test
+      - name: Generate coverage report
+        run: |
+          make coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov-report/
+
+      - name: Upload lcov.info
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-info
+          path: coverage/lcov.info
