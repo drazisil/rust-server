@@ -42,6 +42,20 @@ Unit tests are built and run using either CMake or autotools. **GoogleTest is ve
   ctest --test-dir build
   ```
 
+## Creating the Admin User
+
+To create or update the `admin` user in your oxide database, use the provided shell script:
+
+```sh
+./create_admin.sh
+```
+
+- The script will prompt you for a password (twice for confirmation).
+- It requires Python 3 and the `bcrypt` module (`pip3 install bcrypt`).
+- The admin user will be created or updated in `data/lotus.db` with a bcrypt password hash.
+
+If you need to reset the admin password, simply run the script again.
+
 ## Features
 - Handles multiple TCP ports concurrently using `select()`
 - Simple HTTP response on port 3000
