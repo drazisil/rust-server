@@ -22,7 +22,7 @@ test_server_DEPENDENCIES = $(GTEST_OBJS)
 
 TESTS = test_server
 
-CLEANFILES = *.gcda *.gcno *.gcov lcov.info $(GTEST_OBJS)
+CLEANFILES = *.gcda *.gcno *.gcov lcov.info $(GTEST_OBJS) *.dirstamp src/*.gcda src/*.gcno tests/*.gcda tests/*.gcno
 
 # Build rules for GoogleTest objects
 gtest-all.o: $(GTEST_DIR)/src/gtest-all.cc
@@ -38,3 +38,8 @@ coverage:
 	./test_server || true
 	lcov --directory . --capture --output-file lcov.info --ignore-errors inconsistent,source,mismatch
 	genhtml lcov.info --output-directory lcov-report --ignore-errors source,mismatch
+
+# Clean CMake and out/ build directories as well
+clean-local:
+	rm -rf build/ out/
+	find . -name '*.dirstamp' -delete
