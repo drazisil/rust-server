@@ -1,4 +1,4 @@
-# my-socket-server
+# oxide
 
 This project is a multi-port server written in **C++** using raw sockets. It provides:
 
@@ -22,7 +22,7 @@ Alternatively, you can still use CMake directly:
 ```sh
 cmake -S . -B build
 cmake --build build
-./build/my-socket-server
+./build/oxide
 ```
 
 ## Features

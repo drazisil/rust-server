@@ -111,27 +111,26 @@ npx ts-node src/admin-cli.ts getcustomerid alice
 
 # CLI Commands
 
-This project is a C++/CMake server. Common commands:
+This project is a C++/CMake server. Common commands for **oxide**:
 
 ## Build
 
 ```sh
-cmake -S . -B build
-cmake --build build
+make build
 ```
 
 ## Run
 
 ```sh
-./build/my-socket-server
+make run
 ```
 
 ## Clean
 
 ```sh
-rm -rf build/
+make clean
 ```
 
 ---
 
-**Note:** All commands are for the C++/CMake version. Node.js/TypeScript commands are obsolete.
+**Note:** All commands are for the C++/CMake version. Node.js/TypeScript commands are obsolete. The project is now named **oxide**.

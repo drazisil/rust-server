@@ -13,8 +13,8 @@ The server uses `select()` for multiplexing and can be extended to implement cus
 - `CMakeLists.txt`: CMake build configuration.
 
 ## Build & Run
-See the README for build instructions using CMake.
+See the README for build instructions using CMake or the Makefile for oxide.
 
 ---
 
-**Note:** This project was migrated from a Node.js/TypeScript codebase to C++ for performance and system-level control.
+**Note:** This project was migrated from a Node.js/TypeScript codebase to C++ for performance and system-level control. The project is now named **oxide**.

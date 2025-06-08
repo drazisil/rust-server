@@ -74,7 +74,7 @@ This project follows the standard code of conduct for open source C++ projects. 
 
 ---
 
-**Note:** The project is now implemented in C++ and CMake. All contributions should follow C++ best practices.
+**Note:** The project is now implemented in C++ and CMake. All contributions should follow C++ best practices. The project name is **oxide**.
 
 ## Attribution
 
