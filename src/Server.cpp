@@ -1,7 +1,9 @@
+#include "logger.hpp"
 #include "Server.hpp"
 #include "http_handlers.hpp"
 #include "custom1_handlers.hpp"
 #include "custom2_handlers.hpp"
+#include "logger.hpp"
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -58,11 +60,11 @@ int Server::create_listener(int port) {
 }
 
 void Server::run() {
-    std::cout << "Starting multi-port server...\n";
-    std::cout << "Listening on:\n";
-    std::cout << "  HTTP: " << HTTP_PORT << "\n";
-    std::cout << "  CUSTOM1: 8226, 8228, 7003\n";
-    std::cout << "  CUSTOM2: " << CUSTOM_PROTO2_PORT << "\n";
+    LOG("Starting multi-port server...");
+    LOG(std::string("Listening on:\n") +
+        "  HTTP: " + std::to_string(HTTP_PORT) + "\n" +
+        "  CUSTOM1: 8226, 8228, 7003\n" +
+        "  CUSTOM2: " + std::to_string(CUSTOM_PROTO2_PORT));
     handle_connections();
 }
 
@@ -106,7 +108,7 @@ void Server::handle_connections() {
                     handle_custom2_packet(client_fd, data);
                 }
                 close(client_fd);
-                std::cout << "Handled connection on port " << ntohs(client_addr.sin_port) << " (" << l.second << ")" << std::endl;
+                LOG(std::string("Handled connection on port ") + std::to_string(ntohs(client_addr.sin_port)) + " (" + l.second + ")");
             }
         }
     }

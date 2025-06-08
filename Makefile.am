@@ -6,6 +6,7 @@ AM_CXXFLAGS = -std=c++17
 SRC_MODULES = \
 	src/custom1_handlers.cpp \
 	src/custom2_handlers.cpp \
+	src/logger.cpp \
 	src/Server.cpp \
 	src/http_handlers.cpp
 

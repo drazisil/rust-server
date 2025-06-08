@@ -1,4 +1,5 @@
 #include "http_handlers.hpp"
+#include "logger.hpp"
 #include <string>
 #include <cstring>
 #include <sys/socket.h>

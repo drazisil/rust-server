@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SERVER_HPP
+#define SERVER_HPP
+
 #include <vector>
 #include <string>
 
@@ -13,3 +15,5 @@ private:
     void handle_connections();
     std::vector<std::pair<int, std::string>> listeners;
 };
+
+#endif // SERVER_HPP
