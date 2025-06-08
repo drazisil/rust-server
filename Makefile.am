@@ -1,5 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
+AM_CXXFLAGS = -std=c++17
+
 bin_PROGRAMS = oxide
 oxide_SOURCES = main.cpp src/Server.cpp
 oxide_CPPFLAGS = -I$(srcdir)/src
@@ -28,8 +30,11 @@ gtest-all.o: $(GTEST_DIR)/src/gtest-all.cc
 
 .PHONY: coverage
 coverage:
+	find . -name '*.gcda' -delete
+	find . -name '*.gcno' -delete
+	find . -name '*.o' -delete
 	$(MAKE) clean
 	$(MAKE) CXXFLAGS="--coverage -O0" test_server
 	./test_server || true
-	lcov --directory . --capture --output-file lcov.info --ignore-errors inconsistent,source
-	genhtml lcov.info --output-directory lcov-report --ignore-errors source
+	lcov --directory . --capture --output-file lcov.info --ignore-errors inconsistent,source,mismatch
+	genhtml lcov.info --output-directory lcov-report --ignore-errors source,mismatch
