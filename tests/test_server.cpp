@@ -6,9 +6,12 @@
 
 // Test that the Server can be constructed and destructed without error
 TEST(ServerTest, ConstructionAndDestruction) {
-    Server* server = nullptr;
-    ASSERT_NO_THROW(server = new Server());
-    ASSERT_NO_THROW(delete server);
+    // Explicitly scope the server to ensure proper destruction
+    {
+        std::unique_ptr<Server> server;
+        ASSERT_NO_THROW(server = std::make_unique<Server>());
+    }
+    // Server is automatically destroyed at the end of the scope
 }
 
 // Test that create_listener returns a valid socket and can bind to a random port
