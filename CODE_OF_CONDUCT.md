@@ -68,6 +68,14 @@ Community leaders will follow these Community Impact Guidelines in determining t
 
 **Consequence**: A permanent ban from any sort of public interaction within the community.
 
+## Code of Conduct
+
+This project follows the standard code of conduct for open source C++ projects. Please be respectful and professional in all communications.
+
+---
+
+**Note:** The project is now implemented in C++ and CMake. All contributions should follow C++ best practices.
+
 ## Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 2.1, available at [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).

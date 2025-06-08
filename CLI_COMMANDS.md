@@ -108,3 +108,30 @@ npx ts-node src/admin-cli.ts getcustomerid alice
 - You must have Node.js and all dependencies installed to use the CLI.
 
 ---
+
+# CLI Commands
+
+This project is a C++/CMake server. Common commands:
+
+## Build
+
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+## Run
+
+```sh
+./build/my-socket-server
+```
+
+## Clean
+
+```sh
+rm -rf build/
+```
+
+---
+
+**Note:** All commands are for the C++/CMake version. Node.js/TypeScript commands are obsolete.

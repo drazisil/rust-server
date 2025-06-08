@@ -16,3 +16,14 @@ User=www-data
 
 [Install]
 WantedBy=multi-user.target
+
+# Service: oxide
+
+# This service runs the C++ multi-port server (`my-socket-server`).
+#
+# - Build with CMake as described in the README.
+# - The service listens on ports 3000 (HTTP), 8226/8228/7003 (Custom1), and 43300 (Custom2).
+#
+# ---
+#
+# **Note:** This service file is for the C++/CMake version of the project.
