@@ -54,3 +54,4 @@ dist/
 *.lo
 *.la
 *.in
+*.db

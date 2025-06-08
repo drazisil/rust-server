@@ -72,9 +72,9 @@ void Server::handle_connections() {
     fd_set master_set, read_fds;
     FD_ZERO(&master_set);
     int fdmax = 0;
-    for (const auto& l : listeners) {
-        FD_SET(l.first, &master_set);
-        if (l.first > fdmax) fdmax = l.first;
+    for (const auto& [fd, protocol] : listeners) {
+        FD_SET(fd, &master_set);
+        if (fd > fdmax) fdmax = fd;
     }
     while (true) {
         read_fds = master_set;
@@ -82,33 +82,33 @@ void Server::handle_connections() {
             perror("select");
             break;
         }
-        for (const auto& l : listeners) {
-            if (FD_ISSET(l.first, &read_fds)) {
+        for (const auto& [fd, protocol] : listeners) {
+            if (FD_ISSET(fd, &read_fds)) {
                 sockaddr_in client_addr;
                 socklen_t addrlen = sizeof(client_addr);
-                int client_fd = accept(l.first, (sockaddr*)&client_addr, &addrlen);
+                int client_fd = accept(fd, (sockaddr*)&client_addr, &addrlen);
                 if (client_fd < 0) {
                     perror("accept");
                     continue;
                 }
-                if (l.second == "HTTP") {
+                if (protocol == "HTTP") {
                     char buffer[1024] = {0};
                     ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
                     std::string request(buffer, bytes > 0 ? bytes : 0);
                     handle_http_request(client_fd, request);
-                } else if (l.second == "CUSTOM1") {
+                } else if (protocol == "CUSTOM1") {
                     char buffer[1024] = {0};
                     ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
                     std::string data(buffer, bytes > 0 ? bytes : 0);
                     handle_custom1_packet(client_fd, data);
-                } else if (l.second == "CUSTOM2") {
+                } else if (protocol == "CUSTOM2") {
                     char buffer[1024] = {0};
                     ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
                     std::string data(buffer, bytes > 0 ? bytes : 0);
                     handle_custom2_packet(client_fd, data);
                 }
                 close(client_fd);
-                LOG(std::string("Handled connection on port ") + std::to_string(ntohs(client_addr.sin_port)) + " (" + l.second + ")");
+                LOG(std::string("Handled connection on port ") + std::to_string(ntohs(client_addr.sin_port)) + " (" + protocol + ")");
             }
         }
     }

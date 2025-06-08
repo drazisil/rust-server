@@ -1,5 +1,6 @@
 #include "http_handlers.hpp"
 #include "logger.hpp"
+#include "login.hpp"
 #include <string>
 #include <cstring>
 #include <sys/socket.h>
@@ -38,7 +39,10 @@ bool handle_http_request(int client_fd, const std::string& request) {
                 // params now contains key-value pairs from the query string
             }
         }
-        response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok";
+        std::string login_result = handle_auth_login(params);
+        std::string http_response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(login_result.size()) + "\r\n\r\n" + login_result;
+        send(client_fd, http_response.c_str(), http_response.size(), 0);
+        return true;
     } else {
         response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello, world!";
     }
