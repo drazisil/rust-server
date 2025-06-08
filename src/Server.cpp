@@ -1,4 +1,7 @@
 #include "Server.hpp"
+#include "http_handlers.hpp"
+#include "custom1_handlers.hpp"
+#include "custom2_handlers.hpp"
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -87,14 +90,20 @@ void Server::handle_connections() {
                     continue;
                 }
                 if (l.second == "HTTP") {
-                    const char* response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello, world!";
-                    send(client_fd, response, strlen(response), 0);
+                    char buffer[1024] = {0};
+                    ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+                    std::string request(buffer, bytes > 0 ? bytes : 0);
+                    handle_http_request(client_fd, request);
                 } else if (l.second == "CUSTOM1") {
-                    const char* msg = "Custom Protocol 1 Connected\n";
-                    send(client_fd, msg, strlen(msg), 0);
+                    char buffer[1024] = {0};
+                    ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+                    std::string data(buffer, bytes > 0 ? bytes : 0);
+                    handle_custom1_packet(client_fd, data);
                 } else if (l.second == "CUSTOM2") {
-                    const char* msg = "Custom Protocol 2 Connected\n";
-                    send(client_fd, msg, strlen(msg), 0);
+                    char buffer[1024] = {0};
+                    ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+                    std::string data(buffer, bytes > 0 ? bytes : 0);
+                    handle_custom2_packet(client_fd, data);
                 }
                 close(client_fd);
                 std::cout << "Handled connection on port " << ntohs(client_addr.sin_port) << " (" << l.second << ")" << std::endl;

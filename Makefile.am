@@ -2,8 +2,15 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CXXFLAGS = -std=c++17
 
+# List all C++ source files in src/ (update this list when adding/removing modules)
+SRC_MODULES = \
+	src/custom1_handlers.cpp \
+	src/custom2_handlers.cpp \
+	src/Server.cpp \
+	src/http_handlers.cpp
+
 bin_PROGRAMS = oxide
-oxide_SOURCES = main.cpp src/Server.cpp
+oxide_SOURCES = main.cpp $(SRC_MODULES)
 oxide_CPPFLAGS = -I$(srcdir)/src
 
 # GoogleTest sources (vendored)
@@ -14,7 +21,7 @@ GTEST_OBJS = gtest-all.o
 GTEST_CPPFLAGS = -I$(GTEST_DIR)/include -I$(GTEST_DIR)
 
 check_PROGRAMS = test_server
-test_server_SOURCES = tests/test_server.cpp src/Server.cpp
+test_server_SOURCES = tests/test_server.cpp $(SRC_MODULES)
 test_server_CPPFLAGS = -I$(srcdir)/src $(GTEST_CPPFLAGS)
 test_server_LDADD = $(GTEST_OBJS) -lpthread
 
@@ -38,6 +45,10 @@ coverage:
 	./test_server || true
 	lcov --directory . --capture --output-file lcov.info --ignore-errors inconsistent,source,mismatch
 	genhtml lcov.info --output-directory lcov-report --ignore-errors source,mismatch
+
+.PHONY: run
+run: oxide
+	./oxide
 
 # Clean CMake and out/ build directories as well
 clean-local:
