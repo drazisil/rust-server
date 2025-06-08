@@ -15,6 +15,7 @@ compile
 test_server
 oxide
 .deps/
+.dirstamp
 
 # CMake build artifacts
 build/
