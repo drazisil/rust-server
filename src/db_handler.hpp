@@ -14,6 +14,7 @@ public:
     bool is_connected() const;
     // Example: get password hash for a username
     std::optional<std::string> get_password_hash(const std::string& username);
+    std::optional<std::string> get_customer_id(const std::string &username);
     // Add more methods as needed
 private:
     struct Impl;

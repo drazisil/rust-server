@@ -10,7 +10,8 @@ SRC_MODULES = \
 	src/logger.cpp \
 	src/login.cpp \
 	src/Server.cpp \
-	src/http_handlers.cpp
+	src/http_handlers.cpp \
+	src/session_manager.cpp
 
 bin_PROGRAMS = oxide
 oxide_SOURCES = main.cpp $(SRC_MODULES)
