@@ -88,15 +88,6 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
             if (hex_error) {
                 LOG_ERROR("Aborting Field2 decryption due to invalid hex.");
             } else {
-                LOG("  Field2 Binary (hex): " + [&field2_bin](){
-                    std::string s;
-                    for (unsigned char b : field2_bin) {
-                        char hex[3];
-                        snprintf(hex, sizeof(hex), "%02x", b);
-                        s += hex;
-                    }
-                    return s;
-                }());
                 std::string privkey_path = "data/private_key.pem";
                 FILE* privkey_file = fopen(privkey_path.c_str(), "r");
                 if (!privkey_file) {
@@ -130,7 +121,6 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
                                 snprintf(hex, sizeof(hex), "%02x", decrypted[i]);
                                 decrypted_hex += hex;
                             }
-                            LOG("  Field2 Decrypted (hex): " + decrypted_hex);
 
                             // DEBUG: Print first 32 bytes of decrypted buffer as hex for comparison
                             if (!decrypted.empty()) {
@@ -140,7 +130,6 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
                                     snprintf(hex, sizeof(hex), "%02x", decrypted[i]);
                                     decrypted_first32 += hex;
                                 }
-                                LOG("  Field2 Decrypted (first 32 bytes, hex): " + decrypted_first32);
                             }
 
                             // DEBUG: Print last 32 bytes of decrypted buffer as hex for session key extraction
@@ -151,7 +140,6 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
                                     snprintf(hex, sizeof(hex), "%02x", decrypted[i]);
                                     decrypted_last32 += hex;
                                 }
-                                LOG("  Field2 Decrypted (last 32 bytes, hex): " + decrypted_last32);
                             }
 
                             // --- NPSUserStatus.ts session key extraction logic ---
@@ -168,9 +156,6 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
                                                        (decrypted[2 + session_key_len + 1] << 16) |
                                                        (decrypted[2 + session_key_len + 2] << 8) |
                                                        (decrypted[2 + session_key_len + 3]);
-                                    LOG("  Parsed session key (hex): " + session_key_hex);
-                                    LOG("  Session key length: " + std::to_string(session_key_len));
-                                    LOG("  Session key expires: " + std::to_string(expires));
                                 } else {
                                     LOG_ERROR("Decrypted buffer too short or invalid session key length: " + std::to_string(session_key_len));
                                 }
