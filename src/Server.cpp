@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
 #include <algorithm>
@@ -87,6 +88,7 @@ void Server::handle_connections() {
                 sockaddr_in client_addr;
                 socklen_t addrlen = sizeof(client_addr);
                 int client_fd = accept(fd, (sockaddr*)&client_addr, &addrlen);
+                LOG("New connection on local port " + std::to_string(ntohs(client_addr.sin_port)) + " from " + inet_ntoa(client_addr.sin_addr) + " (" + protocol + ")");
                 if (client_fd < 0) {
                     perror("accept");
                     continue;
