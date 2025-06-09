@@ -13,9 +13,10 @@
 #include <openssl/err.h>
 #include <algorithm>
 #include "db_handler.hpp"
+#include "connection_manager.hpp"
 
 // Handler for message_id 0x501 (login)
-void handle_custom1_login(const Custom1Packet &pkt)
+void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
 {
     // Field1 is the username. Look this up from the db_handler, and get the customer_id
     if (pkt.field1.empty())
@@ -120,6 +121,16 @@ void handle_custom1_login(const Custom1Packet &pkt)
                                    (decrypted[2 + session_key_len + 2] << 8) |
                                    (decrypted[2 + session_key_len + 3]);
                 LOG("Session key successfully decrypted for user: " + username);
+
+                // Store the session key and customer ID in the connection manager
+                ConnectionManager &conn_mgr = custom1_conn_mgr; // Use the global connection manager
+                ConnectionInfo *conn_info = conn_mgr.get_connection(connection_id);
+                if (conn_info)
+                {
+                    conn_info->session_key = session_key_hex;
+                    conn_info->customer_id = *customer_id_opt; // Set the customer ID from the database
+                    LOG("Session key stored for customer ID: " + conn_info->customer_id);
+                }
             }
             else
             {
@@ -154,7 +165,7 @@ void handle_custom1_login(const Custom1Packet &pkt)
  * fea31c19 // CRC32 checksum (4 bytes) - 0x1c19fea3
  */
 
-bool handle_custom1_packet(int client_fd, const std::string &data)
+bool handle_custom1_packet(int client_fd, const std::string &data, int connection_id)
 {
 
     // Log the received data in hex for debugging with local port it was received on
@@ -204,7 +215,7 @@ bool handle_custom1_packet(int client_fd, const std::string &data)
         LOG("  Field2 Data: " + std::string(pkt.field2.begin(), pkt.field2.end()));
         if (pkt.message_id == 0x501)
         {
-            handle_custom1_login(pkt);
+            handle_custom1_login(pkt, connection_id);
         }
         else
         {

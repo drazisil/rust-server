@@ -4,6 +4,7 @@
 #include "custom1_handlers.hpp"
 #include "custom2_handlers.hpp"
 #include "logger.hpp"
+#include "connection_manager.hpp"
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,6 +17,9 @@
 #define HTTP_PORT 3000
 #define CUSTOM_PROTO2_PORT 43300
 #define MAX_CONN 10
+
+// Global instance for all translation units
+ConnectionManager custom1_conn_mgr;
 
 Server::Server() {
     // HTTP server
@@ -93,6 +97,9 @@ void Server::handle_connections() {
                     perror("accept");
                     continue;
                 }
+                if (protocol == "CUSTOM1") {
+                    custom1_conn_mgr.add_connection(client_fd);
+                }
                 if (protocol == "HTTP") {
                     char buffer[1024] = {0};
                     ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
@@ -102,12 +109,16 @@ void Server::handle_connections() {
                     char buffer[1024] = {0};
                     ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
                     std::string data(buffer, bytes > 0 ? bytes : 0);
-                    handle_custom1_packet(client_fd, data);
+                    // Pass client_fd as connection_id for now
+                    handle_custom1_packet(client_fd, data, client_fd);
                 } else if (protocol == "CUSTOM2") {
                     char buffer[1024] = {0};
                     ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
                     std::string data(buffer, bytes > 0 ? bytes : 0);
                     handle_custom2_packet(client_fd, data);
+                }
+                if (protocol == "CUSTOM1") {
+                    custom1_conn_mgr.remove_connection(client_fd);
                 }
                 close(client_fd);
                 LOG(std::string("Handled connection on port ") + std::to_string(ntohs(client_addr.sin_port)) + " (" + protocol + ")");

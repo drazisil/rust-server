@@ -4,6 +4,7 @@ AM_CXXFLAGS = -std=c++17
 
 # List all C++ source files in src/ (update this list when adding/removing modules)
 SRC_MODULES = \
+	src/connection_manager.cpp \
 	src/custom1_handlers.cpp \
 	src/custom2_handlers.cpp \
 	src/db_handler.cpp \
