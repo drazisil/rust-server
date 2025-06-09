@@ -8,6 +8,10 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#include <openssl/err.h>
+#include <algorithm>
 
 /** 
  * Example packet and it's custom format:
@@ -54,7 +58,7 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
         LOG("Parsed Custom Protocol 1 packet:");
         LOG("  Message ID: " + std::to_string(pkt.message_id));
         LOG("  Packet Length: " + std::to_string(pkt.packet_length));
-        LOG("  Version: " + std::to_string(pkt.version));
+        LOG("  Version: " + std::to_string(pkt.reserved1));
         LOG("  Reserved1: " + std::to_string(pkt.reserved1));
         LOG("  Packet Length 4: " + std::to_string(pkt.packet_length_4));
         LOG("  Field1 Length: " + std::to_string(pkt.field1.size()));
@@ -62,9 +66,125 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
         LOG("  Reserved2: " + std::to_string(pkt.reserved2));
         LOG("  Field2 Length: " + std::to_string(pkt.field2.size()));
         LOG("  Field2 Data: " + std::string(pkt.field2.begin(), pkt.field2.end()));
-        LOG("  Field3 Length: " + std::to_string(pkt.field3.size()));
-        LOG("  Field3 Data: " + std::string(pkt.field3.begin(), pkt.field3.end()));
-        LOG("  CRC32: " + std::to_string(pkt.crc32));
+        // Field2 is a hex string, each byte is represented by two ASCII hex chars (e.g., '4F').
+        // The correct length for a 1024-bit RSA key is 256 hex chars (128 bytes binary).
+        if (pkt.field2.size() != 256) {
+            LOG_ERROR("Field2 hex string length is not 256, got: " + std::to_string(pkt.field2.size()));
+        } else {
+            std::vector<unsigned char> field2_bin;
+            field2_bin.reserve(128);
+            bool hex_error = false;
+            for (size_t i = 0; i < pkt.field2.size(); i += 2) {
+                char hi = pkt.field2[i];
+                char lo = pkt.field2[i+1];
+                if (!isxdigit(hi) || !isxdigit(lo)) {
+                    LOG_ERROR(std::string("Non-hex character in Field2 at position ") + std::to_string(i) + ": '" + hi + "' '" + lo + "'");
+                    hex_error = true;
+                    break;
+                }
+                unsigned char byte = (unsigned char)((std::stoi(std::string(1, hi), nullptr, 16) << 4) | std::stoi(std::string(1, lo), nullptr, 16));
+                field2_bin.push_back(byte);
+            }
+            if (hex_error) {
+                LOG_ERROR("Aborting Field2 decryption due to invalid hex.");
+            } else {
+                LOG("  Field2 Binary (hex): " + [&field2_bin](){
+                    std::string s;
+                    for (unsigned char b : field2_bin) {
+                        char hex[3];
+                        snprintf(hex, sizeof(hex), "%02x", b);
+                        s += hex;
+                    }
+                    return s;
+                }());
+                std::string privkey_path = "data/private_key.pem";
+                FILE* privkey_file = fopen(privkey_path.c_str(), "r");
+                if (!privkey_file) {
+                    LOG_ERROR("Failed to open private key file: " + privkey_path);
+                } else {
+                    RSA* rsa = PEM_read_RSAPrivateKey(privkey_file, nullptr, nullptr, nullptr);
+                    fclose(privkey_file);
+                    if (!rsa) {
+                        LOG_ERROR("Failed to read private key from: " + privkey_path);
+                    } else {
+                        int key_size = RSA_size(rsa);
+                        if ((int)field2_bin.size() != key_size) {
+                            LOG_ERROR("Field2 binary size (" + std::to_string(field2_bin.size()) + ") does not match RSA key size (" + std::to_string(key_size) + ")! Decryption will likely fail.");
+                        }
+                        std::vector<unsigned char> decrypted(key_size);
+                        int decrypted_len = RSA_private_decrypt(
+                            field2_bin.size(),
+                            field2_bin.data(),
+                            decrypted.data(),
+                            rsa,
+                            RSA_PKCS1_OAEP_PADDING // Use OAEP padding for decryption
+                        );
+                        if (decrypted_len == -1) {
+                            char errbuf[256];
+                            ERR_error_string_n(ERR_get_error(), errbuf, sizeof(errbuf));
+                            LOG_ERROR(std::string("RSA_private_decrypt failed: ") + errbuf);
+                        } else {
+                            std::string decrypted_hex;
+                            for (int i = 0; i < decrypted_len; ++i) {
+                                char hex[3];
+                                snprintf(hex, sizeof(hex), "%02x", decrypted[i]);
+                                decrypted_hex += hex;
+                            }
+                            LOG("  Field2 Decrypted (hex): " + decrypted_hex);
+
+                            // DEBUG: Print first 32 bytes of decrypted buffer as hex for comparison
+                            if (!decrypted.empty()) {
+                                std::string decrypted_first32;
+                                for (int i = 0; i < std::min(32, decrypted_len); ++i) {
+                                    char hex[3];
+                                    snprintf(hex, sizeof(hex), "%02x", decrypted[i]);
+                                    decrypted_first32 += hex;
+                                }
+                                LOG("  Field2 Decrypted (first 32 bytes, hex): " + decrypted_first32);
+                            }
+
+                            // DEBUG: Print last 32 bytes of decrypted buffer as hex for session key extraction
+                            if (decrypted_len >= 32) {
+                                std::string decrypted_last32;
+                                for (int i = decrypted_len - 32; i < decrypted_len; ++i) {
+                                    char hex[3];
+                                    snprintf(hex, sizeof(hex), "%02x", decrypted[i]);
+                                    decrypted_last32 += hex;
+                                }
+                                LOG("  Field2 Decrypted (last 32 bytes, hex): " + decrypted_last32);
+                            }
+
+                            // --- NPSUserStatus.ts session key extraction logic ---
+                            if (decrypted_len >= 6) { // 2 bytes length + at least 1 byte key + 4 bytes expires
+                                int session_key_len = (decrypted[0] << 8) | decrypted[1];
+                                if (session_key_len > 0 && session_key_len + 6 <= decrypted_len) {
+                                    std::string session_key_hex;
+                                    for (int i = 0; i < session_key_len; ++i) {
+                                        char hex[3];
+                                        snprintf(hex, sizeof(hex), "%02x", decrypted[2 + i]);
+                                        session_key_hex += hex;
+                                    }
+                                    uint32_t expires = (decrypted[2 + session_key_len] << 24) |
+                                                       (decrypted[2 + session_key_len + 1] << 16) |
+                                                       (decrypted[2 + session_key_len + 2] << 8) |
+                                                       (decrypted[2 + session_key_len + 3]);
+                                    LOG("  Parsed session key (hex): " + session_key_hex);
+                                    LOG("  Session key length: " + std::to_string(session_key_len));
+                                    LOG("  Session key expires: " + std::to_string(expires));
+                                } else {
+                                    LOG_ERROR("Decrypted buffer too short or invalid session key length: " + std::to_string(session_key_len));
+                                }
+                            } else {
+                                LOG_ERROR("Decrypted buffer too short to contain session key and expiration");
+                            }
+                        }
+                        RSA_free(rsa);
+                    }
+                }
+            }
+        }
+        // --- End Field2 session key handling ---
+
     } catch (const std::runtime_error& e) {
         LOG_ERROR("Failed to unpack Custom Protocol 1 packet: " + std::string(e.what()));
         return false;
@@ -74,6 +194,7 @@ bool handle_custom1_packet(int client_fd, const std::string& data) {
     // Placeholder: always respond with a static message
     const char* msg = "Custom Protocol 1 Connected\n";
     send(client_fd, msg, strlen(msg), 0);
+
     return true;
 }
 
