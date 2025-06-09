@@ -33,7 +33,7 @@ python3 <<EOF
 import bcrypt, sqlite3, sys
 pw = bcrypt.hashpw('$PASSWORD'.encode(), bcrypt.gensalt()).decode()
 con = sqlite3.connect('$DB_PATH')
-ogcon.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password_hash TEXT UNIQUE NOT NULL, customer_id INTEGER UNIQUE NOT NULL)')
+con.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password_hash TEXT UNIQUE NOT NULL, customer_id INTEGER UNIQUE NOT NULL)')
 con.execute('INSERT OR REPLACE INTO users (username, password_hash, customer_id) VALUES (?, ?, ?)',
             ('$USERNAME', pw, $CUSTOMER_ID))
 con.commit()
