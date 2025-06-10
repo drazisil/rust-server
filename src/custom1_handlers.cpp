@@ -19,116 +19,118 @@
 
 extern SessionManager session_manager;
 
+// Helper: decode hex string to binary
+bool hex_to_bin(const std::string& hex, std::vector<unsigned char>& out, std::string* err) {
+    if (hex.size() % 2 != 0) {
+        if (err) *err = "Hex string has odd length";
+        return false;
+    }
+    out.clear();
+    out.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+        char hi = hex[i];
+        char lo = hex[i + 1];
+        if (!isxdigit(hi) || !isxdigit(lo)) {
+            if (err) *err = "Non-hex character at position " + std::to_string(i);
+            return false;
+        }
+        unsigned char byte = static_cast<unsigned char>(std::stoi(hex.substr(i, 2), nullptr, 16));
+        out.push_back(byte);
+    }
+    return true;
+}
+
+// Helper: load private key from file
+EVP_PKEY* load_private_key(const std::string& path, std::string* err) {
+    FILE* f = fopen(path.c_str(), "r");
+    if (!f) {
+        if (err) *err = "Failed to open private key file: " + path;
+        return nullptr;
+    }
+    EVP_PKEY* pkey = PEM_read_PrivateKey(f, nullptr, nullptr, nullptr);
+    fclose(f);
+    if (!pkey && err) *err = "Failed to read private key from: " + path;
+    return pkey;
+}
+
+// Helper: decrypt with OpenSSL EVP
+bool rsa_oaep_decrypt(EVP_PKEY* pkey, const std::vector<unsigned char>& in, std::vector<unsigned char>& out, std::string* err) {
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(pkey, nullptr);
+    if (!ctx) {
+        if (err) *err = "Failed to create EVP_PKEY_CTX";
+        return false;
+    }
+    if (EVP_PKEY_decrypt_init(ctx) <= 0) {
+        if (err) *err = "EVP_PKEY_decrypt_init failed";
+        EVP_PKEY_CTX_free(ctx);
+        return false;
+    }
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+        if (err) *err = "EVP_PKEY_CTX_set_rsa_padding failed";
+        EVP_PKEY_CTX_free(ctx);
+        return false;
+    }
+    size_t outlen = 0;
+    if (EVP_PKEY_decrypt(ctx, nullptr, &outlen, in.data(), in.size()) <= 0) {
+        if (err) *err = "EVP_PKEY_decrypt (size query) failed";
+        EVP_PKEY_CTX_free(ctx);
+        return false;
+    }
+    out.resize(outlen);
+    if (EVP_PKEY_decrypt(ctx, out.data(), &outlen, in.data(), in.size()) <= 0) {
+        if (err) *err = "EVP_PKEY_decrypt failed";
+        EVP_PKEY_CTX_free(ctx);
+        return false;
+    }
+    out.resize(outlen);
+    EVP_PKEY_CTX_free(ctx);
+    return true;
+}
+
 // Handler for message_id 0x501 (login)
-void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
+void handle_custom1_login(const Custom1Packet &pkt, int connection_id, const std::string& privkey_path = "data/private_key.pem")
 {
-    // Field1 is the session_id. Look up customer_id from SessionManager
-    if (pkt.field1.empty())
-    {
+    if (pkt.field1.empty()) {
         LOG_ERROR("Field1 (session_id) is empty, cannot process login.");
         return;
     }
     std::string session_id(pkt.field1.begin(), pkt.field1.end());
     LOG("Processing login for session_id: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ")");
-
     auto customer_id_opt = session_manager.get(session_id);
-    if (!customer_id_opt)
-    {
+    if (!customer_id_opt) {
         LOG_ERROR("Session ID not found in SessionManager: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ")");
         return;
     }
-
-    // Field2 is a hex string, each byte is represented by two ASCII hex chars (e.g., '4F').
-    // The correct length for a 1024-bit RSA key is 256 hex chars (128 bytes binary).
-    if (pkt.field2.size() != 256)
-    {
+    if (pkt.field2.size() != 256) {
         LOG_ERROR("Field2 hex string length is not 256, got: " + std::to_string(pkt.field2.size()));
         return;
     }
     std::vector<unsigned char> field2_bin;
-    field2_bin.reserve(128);
-    bool hex_error = false;
-    for (size_t i = 0; i < pkt.field2.size(); i += 2)
-    {
-        char hi = pkt.field2[i];
-        char lo = pkt.field2[i + 1];
-        if (!isxdigit(hi) || !isxdigit(lo))
-        {
-            LOG_ERROR(std::string("Non-hex character in Field2 at position ") + std::to_string(i) + ": '" + hi + "' '" + lo + "'");
-            hex_error = true;
-            break;
-        }
-        unsigned char byte = (unsigned char)((std::stoi(std::string(1, hi), nullptr, 16) << 4) | std::stoi(std::string(1, lo), nullptr, 16));
-        field2_bin.push_back(byte);
-    }
-    if (hex_error)
-    {
-        LOG_ERROR("Aborting Field2 decryption due to invalid hex.");
+    std::string hex_err;
+    if (!hex_to_bin(std::string(pkt.field2.begin(), pkt.field2.end()), field2_bin, &hex_err)) {
+        LOG_ERROR("Aborting Field2 decryption: " + hex_err);
         return;
     }
-    std::string privkey_path = "data/private_key.pem";
-    FILE *privkey_file = fopen(privkey_path.c_str(), "r");
-    if (!privkey_file)
-    {
-        LOG_ERROR("Failed to open private key file: " + privkey_path);
+    std::string key_err;
+    EVP_PKEY* pkey = load_private_key(privkey_path, &key_err);
+    if (!pkey) {
+        LOG_ERROR(key_err);
         return;
     }
-    EVP_PKEY *pkey = PEM_read_PrivateKey(privkey_file, nullptr, nullptr, nullptr);
-    fclose(privkey_file);
-    if (!pkey)
-    {
-        LOG_ERROR("Failed to read private key from: " + privkey_path);
-        return;
-    }
-    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey, nullptr);
-    if (!ctx)
-    {
-        LOG_ERROR("Failed to create EVP_PKEY_CTX");
+    std::vector<unsigned char> decrypted;
+    std::string dec_err;
+    if (!rsa_oaep_decrypt(pkey, field2_bin, decrypted, &dec_err)) {
+        LOG_ERROR(dec_err);
         EVP_PKEY_free(pkey);
         return;
     }
-    if (EVP_PKEY_decrypt_init(ctx) <= 0)
-    {
-        LOG_ERROR("EVP_PKEY_decrypt_init failed");
-        EVP_PKEY_free(pkey);
-        EVP_PKEY_CTX_free(ctx);
-        return;
-    }
-    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0)
-    {
-        LOG_ERROR("EVP_PKEY_CTX_set_rsa_padding failed");
-        EVP_PKEY_free(pkey);
-        EVP_PKEY_CTX_free(ctx);
-        return;
-    }
-    size_t outlen = 0;
-    if (EVP_PKEY_decrypt(ctx, nullptr, &outlen, field2_bin.data(), field2_bin.size()) <= 0)
-    {
-        LOG_ERROR("EVP_PKEY_decrypt (size query) failed");
-        EVP_PKEY_free(pkey);
-        EVP_PKEY_CTX_free(ctx);
-        return;
-    }
-    std::vector<unsigned char> decrypted(outlen);
-    if (EVP_PKEY_decrypt(ctx, decrypted.data(), &outlen, field2_bin.data(), field2_bin.size()) <= 0)
-    {
-        LOG_ERROR("EVP_PKEY_decrypt failed");
-        EVP_PKEY_free(pkey);
-        EVP_PKEY_CTX_free(ctx);
-        return;
-    }
-    decrypted.resize(outlen);
     EVP_PKEY_free(pkey);
-    EVP_PKEY_CTX_free(ctx);
     int decrypted_len = static_cast<int>(decrypted.size());
-    if (decrypted_len >= 6)
-    {
+    if (decrypted_len >= 6) {
         int session_key_len = (decrypted[0] << 8) | decrypted[1];
-        if (session_key_len > 0 && session_key_len + 6 <= decrypted_len)
-        {
+        if (session_key_len > 0 && session_key_len + 6 <= decrypted_len) {
             std::string session_key_hex;
-            for (int i = 0; i < session_key_len; ++i)
-            {
+            for (int i = 0; i < session_key_len; ++i) {
                 char hex[3];
                 snprintf(hex, sizeof(hex), "%02x", decrypted[2 + i]);
                 session_key_hex += hex;
@@ -138,8 +140,6 @@ void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
                                (decrypted[2 + session_key_len + 2] << 8) |
                                (decrypted[2 + session_key_len + 3]);
             LOG("Session key successfully decrypted for user: " + session_id);
-
-            // Store the session key and customer ID in the connection manager
             ConnectionManager &conn_mgr = custom1_conn_mgr;
             auto conn_info_opt = conn_mgr.get_connection(connection_id);
             if (conn_info_opt) {
@@ -148,14 +148,10 @@ void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
                 conn_info.customer_id = *customer_id_opt;
                 LOG("Session key stored for customer ID: " + conn_info.customer_id);
             }
-        }
-        else
-        {
+        } else {
             LOG_ERROR("Decrypted buffer too short or invalid session key length: " + std::to_string(session_key_len));
         }
-    }
-    else
-    {
+    } else {
         LOG_ERROR("Decrypted buffer too short to contain session key and expiration");
     }
 

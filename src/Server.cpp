@@ -24,17 +24,7 @@ ConnectionManager custom1_conn_mgr;
 SessionManager session_manager;
 
 Server::Server() {
-    // HTTP server
-    int http_listener = create_listener(HTTP_PORT);
-    // Custom protocol 1 servers
-    std::vector<int> custom_proto_ports = {8226, 8228, 7003};
-    for (int port : custom_proto_ports) {
-        listeners.emplace_back(create_listener(port), "CUSTOM1");
-    }
-    listeners.emplace_back(http_listener, "HTTP");
-    // Custom protocol 2 server
-    int custom_proto2_listener = create_listener(CUSTOM_PROTO2_PORT);
-    listeners.emplace_back(custom_proto2_listener, "CUSTOM2");
+    // No side effects or socket creation in constructor
 }
 
 Server::~Server() {
@@ -68,6 +58,17 @@ int Server::create_listener(int port) {
 
 void Server::run() {
     LOG("Starting multi-port server...");
+    // HTTP server
+    int http_listener = create_listener(HTTP_PORT);
+    // Custom protocol 1 servers
+    std::vector<int> custom_proto_ports = {8226, 8228, 7003};
+    for (int port : custom_proto_ports) {
+        listeners.emplace_back(create_listener(port), "CUSTOM1");
+    }
+    listeners.emplace_back(http_listener, "HTTP");
+    // Custom protocol 2 server
+    int custom_proto2_listener = create_listener(CUSTOM_PROTO2_PORT);
+    listeners.emplace_back(custom_proto2_listener, "CUSTOM2");
     LOG(std::string("Listening on:\n") +
         "  HTTP: " + std::to_string(HTTP_PORT) + "\n" +
         "  CUSTOM1: 8226, 8228, 7003\n" +

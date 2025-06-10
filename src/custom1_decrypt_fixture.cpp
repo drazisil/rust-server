@@ -68,16 +68,25 @@ int main() {
     EVP_PKEY_free(pkey);
     EVP_PKEY_CTX_free(ctx);
 
-    // Convert decrypted to hex string
-    std::string decrypted_hex;
-    for (unsigned char c : decrypted) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02x", c);
-        decrypted_hex += buf;
+    // Extract session key as per protocol: first 2 bytes = length, next N bytes = key
+    if (decrypted.size() < 2) {
+        std::cerr << "Decrypted buffer too short!\n";
+        return 1;
     }
-    std::cout << "Decrypted:   " << decrypted_hex << std::endl;
+    int session_key_len = (decrypted[0] << 8) | decrypted[1];
+    if (static_cast<int>(decrypted.size()) < 2 + session_key_len) {
+        std::cerr << "Decrypted buffer too short for session key!\n";
+        return 1;
+    }
+    std::string session_key_hex;
+    for (int i = 0; i < session_key_len; ++i) {
+        char buf[3];
+        snprintf(buf, sizeof(buf), "%02x", decrypted[2 + i]);
+        session_key_hex += buf;
+    }
+    std::cout << "Decrypted:   " << session_key_hex << std::endl;
     std::cout << "Expected:    " << expected_decrypted << std::endl;
-    assert(decrypted_hex == expected_decrypted && "Decryption did not match expected output!");
+    assert(session_key_hex == expected_decrypted && "Decryption did not match expected output!");
     std::cout << "Test passed!\n";
     return 0;
 }

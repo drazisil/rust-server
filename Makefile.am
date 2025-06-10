@@ -27,7 +27,7 @@ GTEST_OBJS = gtest-all.o
 GTEST_CPPFLAGS = -I$(GTEST_DIR)/include -I$(GTEST_DIR)
 
 check_PROGRAMS = test_server
-test_server_SOURCES = tests/test_server.cpp tests/test_connection_manager.cpp tests/test_session_manager.cpp $(SRC_MODULES)
+test_server_SOURCES = tests/test_server.cpp tests/test_connection_manager.cpp tests/test_session_manager.cpp tests/test_custom1_helpers.cpp $(SRC_MODULES)
 test_server_CPPFLAGS = -I$(srcdir)/src $(GTEST_CPPFLAGS)
 test_server_LDADD = $(GTEST_OBJS) -lpthread
 
@@ -46,7 +46,7 @@ coverage:
 	find . -name '*.gcno' -delete
 	find . -name '*.o' -delete
 	$(MAKE) clean
-	$(MAKE) AM_CXXFLAGS="--coverage -O0" test_server
+	$(MAKE) AM_CXXFLAGS="--coverage -O0" test_server_LDFLAGS="--coverage" test_server
 	./test_server || true
 	lcov --directory . --capture --output-file lcov.info --ignore-errors inconsistent,source,mismatch
 	lcov --remove lcov.info '/usr/include/*' '*/third_party/*' '*/tests/*' --output-file lcov.info

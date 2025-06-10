@@ -6,6 +6,7 @@
 
 class Server {
 public:
+    // Construction does not bind or listen on any ports
     Server();
     ~Server();
     void run();
