@@ -55,3 +55,4 @@ dist/
 *.la
 *.in
 *.db
+custom1_decrypt_fixture
