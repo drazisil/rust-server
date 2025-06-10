@@ -10,16 +10,16 @@ void ConnectionManager::remove_connection(int socket_fd) {
     connections.erase(socket_fd);
 }
 
-ConnectionInfo* ConnectionManager::get_connection(int socket_fd) {
+std::optional<ConnectionInfo> ConnectionManager::get_connection(int socket_fd) const {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = connections.find(socket_fd);
     if (it != connections.end()) {
-        return &it->second;
+        return it->second;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
-std::string ConnectionManager::get_session_key_by_customer_id(const std::string& customer_id) {
+std::string ConnectionManager::get_session_key_by_customer_id(const std::string& customer_id) const {
     std::lock_guard<std::mutex> lock(mtx);
     for (const auto& [fd, info] : connections) {
         if (info.customer_id == customer_id) {
@@ -27,4 +27,9 @@ std::string ConnectionManager::get_session_key_by_customer_id(const std::string&
         }
     }
     return "";
+}
+
+void ConnectionManager::clear() {
+    std::lock_guard<std::mutex> lock(mtx);
+    connections.clear();
 }

@@ -141,12 +141,12 @@ void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
 
             // Store the session key and customer ID in the connection manager
             ConnectionManager &conn_mgr = custom1_conn_mgr;
-            ConnectionInfo *conn_info = conn_mgr.get_connection(connection_id);
-            if (conn_info)
-            {
-                conn_info->session_key = session_key_hex;
-                conn_info->customer_id = *customer_id_opt;
-                LOG("Session key stored for customer ID: " + conn_info->customer_id);
+            auto conn_info_opt = conn_mgr.get_connection(connection_id);
+            if (conn_info_opt) {
+                ConnectionInfo &conn_info = const_cast<ConnectionInfo&>(*conn_info_opt);
+                conn_info.session_key = session_key_hex;
+                conn_info.customer_id = *customer_id_opt;
+                LOG("Session key stored for customer ID: " + conn_info.customer_id);
             }
         }
         else

@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include <mutex>
+#include <optional>
 
 struct ConnectionInfo {
     int socket_fd; // Unique per connection
@@ -13,11 +14,12 @@ class ConnectionManager {
 public:
     void add_connection(int socket_fd);
     void remove_connection(int socket_fd);
-    ConnectionInfo* get_connection(int socket_fd);
+    std::optional<ConnectionInfo> get_connection(int socket_fd) const;
     // Returns the session_key for a given customer_id, or empty string if not found
-    std::string get_session_key_by_customer_id(const std::string& customer_id);
+    std::string get_session_key_by_customer_id(const std::string& customer_id) const;
+    void clear(); // For testability
 
 private:
+    mutable std::mutex mtx;
     std::unordered_map<int, ConnectionInfo> connections; // key: socket fd
-    std::mutex mtx;
 };

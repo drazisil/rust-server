@@ -27,7 +27,7 @@ GTEST_OBJS = gtest-all.o
 GTEST_CPPFLAGS = -I$(GTEST_DIR)/include -I$(GTEST_DIR)
 
 check_PROGRAMS = test_server
-test_server_SOURCES = tests/test_server.cpp $(SRC_MODULES)
+test_server_SOURCES = tests/test_server.cpp tests/test_connection_manager.cpp $(SRC_MODULES)
 test_server_CPPFLAGS = -I$(srcdir)/src $(GTEST_CPPFLAGS)
 test_server_LDADD = $(GTEST_OBJS) -lpthread
 
