@@ -14,30 +14,26 @@
 #include <algorithm>
 #include "db_handler.hpp"
 #include "connection_manager.hpp"
+#include "session_manager.hpp"
+
+extern SessionManager session_manager;
 
 // Handler for message_id 0x501 (login)
 void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
 {
-    // Field1 is the username. Look this up from the db_handler, and get the customer_id
+    // Field1 is the session_id. Look up customer_id from SessionManager
     if (pkt.field1.empty())
     {
-        LOG_ERROR("Field1 is empty, cannot process login.");
+        LOG_ERROR("Field1 (session_id) is empty, cannot process login.");
         return;
     }
-    std::string username(pkt.field1.begin(), pkt.field1.end());
-    LOG("Processing login for user: " + username);
+    std::string session_id(pkt.field1.begin(), pkt.field1.end());
+    LOG("Processing login for session_id: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ")");
 
-    DBHandler db("data/lotus.db");
-    if (!db.connect())
-    {
-        LOG_ERROR("Database connection error: Failed to connect to the database");
-        return;
-    }
-
-    auto customer_id_opt = db.get_customer_id(username);
+    auto customer_id_opt = session_manager.get(session_id);
     if (!customer_id_opt)
     {
-        LOG_ERROR("Invalid credentials: Username not found in database: " + username);
+        LOG_ERROR("Session ID not found in SessionManager: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ")");
         return;
     }
 
@@ -120,15 +116,15 @@ void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
                                    (decrypted[2 + session_key_len + 1] << 16) |
                                    (decrypted[2 + session_key_len + 2] << 8) |
                                    (decrypted[2 + session_key_len + 3]);
-                LOG("Session key successfully decrypted for user: " + username);
+                LOG("Session key successfully decrypted for user: " + session_id);
 
                 // Store the session key and customer ID in the connection manager
-                ConnectionManager &conn_mgr = custom1_conn_mgr; // Use the global connection manager
+                ConnectionManager &conn_mgr = custom1_conn_mgr;
                 ConnectionInfo *conn_info = conn_mgr.get_connection(connection_id);
                 if (conn_info)
                 {
                     conn_info->session_key = session_key_hex;
-                    conn_info->customer_id = *customer_id_opt; // Set the customer ID from the database
+                    conn_info->customer_id = *customer_id_opt;
                     LOG("Session key stored for customer ID: " + conn_info->customer_id);
                 }
             }

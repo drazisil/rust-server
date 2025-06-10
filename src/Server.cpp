@@ -5,6 +5,7 @@
 #include "custom2_handlers.hpp"
 #include "logger.hpp"
 #include "connection_manager.hpp"
+#include "session_manager.hpp"
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -20,6 +21,7 @@
 
 // Global instance for all translation units
 ConnectionManager custom1_conn_mgr;
+SessionManager session_manager;
 
 Server::Server() {
     // HTTP server

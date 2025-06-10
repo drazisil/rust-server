@@ -11,11 +11,7 @@
 #include <unordered_map>
 #include <mutex>
 
-// Global session manager instance
-namespace
-{
-    SessionManager session_manager;
-}
+extern SessionManager session_manager;
 
 std::string invalid_response(const std::string reason_code, const std::string &reason_text, const std::string &reason_url = "")
 {
@@ -77,6 +73,7 @@ std::string handle_auth_login(const std::map<std::string, std::string> &params)
     // Generate a session_id (simple random string for now)
     std::string session_id = std::to_string(std::hash<std::string>{}(user_it->second + std::to_string(time(nullptr))));
     // Store the session_id and customer_id pair
+    LOG("Storing session_id in SessionManager: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ") for customer_id: [" + customer_id_opt.value() + "]");
     session_manager.set(session_id, customer_id_opt.value());
     LOG("User " + user_it->second + " logged in successfully with session ID: " + session_id);
     return valid_response(session_id);
