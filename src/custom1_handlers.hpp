@@ -5,9 +5,13 @@
 #include <vector>
 #include <openssl/evp.h>
 #include "connection_manager.hpp"
+#include "custom1_packet.hpp"
 
 // Handles Custom Protocol 1 packets. Returns true if handled, false otherwise.
 bool handle_custom1_packet(int client_fd, const std::string& data, int connection_id);
+
+// Handler for message_id 0x501 (login)
+void handle_custom1_login(const Custom1Packet &pkt, int connection_id, const std::string& privkey_path = "data/private_key.pem");
 
 // Helper: decode hex string to binary
 // Expose for testing

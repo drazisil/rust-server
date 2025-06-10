@@ -88,7 +88,7 @@ bool rsa_oaep_decrypt(EVP_PKEY* pkey, const std::vector<unsigned char>& in, std:
 }
 
 // Handler for message_id 0x501 (login)
-void handle_custom1_login(const Custom1Packet &pkt, int connection_id, const std::string& privkey_path = "data/private_key.pem")
+void handle_custom1_login(const Custom1Packet &pkt, int connection_id, const std::string& privkey_path)
 {
     if (pkt.field1.empty()) {
         LOG_ERROR("Field1 (session_id) is empty, cannot process login.");
