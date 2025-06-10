@@ -37,7 +37,6 @@ TESTS = test_server
 
 CLEANFILES = *.gcda *.gcno *.gcov lcov.info $(GTEST_OBJS) *.dirstamp src/*.gcda src/*.gcno tests/*.gcda tests/*.gcno
 
-# Build rules for GoogleTest objects
 gtest-all.o: $(GTEST_DIR)/src/gtest-all.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(GTEST_CPPFLAGS) -c -o $@ $<
 
@@ -50,13 +49,13 @@ coverage:
 	$(MAKE) CXXFLAGS="--coverage -O0" test_server
 	./test_server || true
 	lcov --directory . --capture --output-file lcov.info --ignore-errors inconsistent,source,mismatch
+	lcov --remove lcov.info '/usr/include/*' '*/third_party/*' '*/tests/*' --output-file lcov.info
 	genhtml lcov.info --output-directory lcov-report --ignore-errors source,mismatch
 
 .PHONY: run
 run: oxide
 	./oxide
 
-# Clean CMake and out/ build directories as well
 clean-local:
 	rm -rf build/ out/
 	find . -name '*.dirstamp' -delete

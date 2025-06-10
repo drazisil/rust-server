@@ -27,20 +27,13 @@ cmake --build build
 
 ### Running Tests
 
-Unit tests are built and run using either CMake or autotools. **GoogleTest is vendored in `third_party/googletest` and built from source automatically; you do NOT need to install any system gtest package.**
+This project uses GNU autotools/automake for its build system. The standard way to run the test suite is:
 
-- With autotools:
-  ```sh
-  autoreconf -i
-  ./configure
-  make check
-  ```
-- With CMake:
-  ```sh
-  cmake -S . -B build
-  cmake --build build
-  ctest --test-dir build
-  ```
+```
+make check
+```
+
+This will build and run all tests. Note that `make test` is **not** a standard target in automake projects; use `make check` instead.
 
 ## Creating the Admin User
 

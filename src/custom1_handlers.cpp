@@ -11,6 +11,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 #include <algorithm>
 #include "db_handler.hpp"
 #include "connection_manager.hpp"
@@ -72,73 +73,103 @@ void handle_custom1_login(const Custom1Packet &pkt, int connection_id)
         LOG_ERROR("Failed to open private key file: " + privkey_path);
         return;
     }
-    RSA *rsa = PEM_read_RSAPrivateKey(privkey_file, nullptr, nullptr, nullptr);
+    EVP_PKEY *pkey = PEM_read_PrivateKey(privkey_file, nullptr, nullptr, nullptr);
     fclose(privkey_file);
-    if (!rsa)
+    if (!pkey)
     {
         LOG_ERROR("Failed to read private key from: " + privkey_path);
         return;
     }
-    int key_size = RSA_size(rsa);
-    if ((int)field2_bin.size() != key_size)
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey, nullptr);
+    if (!ctx)
     {
-        LOG_ERROR("Field2 binary size (" + std::to_string(field2_bin.size()) + ") does not match RSA key size (" + std::to_string(key_size) + ")! Decryption will likely fail.");
+        LOG_ERROR("Failed to create EVP_PKEY_CTX");
+        EVP_PKEY_free(pkey);
+        return;
     }
-    std::vector<unsigned char> decrypted(key_size);
-    int decrypted_len = RSA_private_decrypt(
-        field2_bin.size(),
-        field2_bin.data(),
-        decrypted.data(),
-        rsa,
-        RSA_PKCS1_OAEP_PADDING // Use OAEP padding for decryption
-    );
-    if (decrypted_len == -1)
+    if (EVP_PKEY_decrypt_init(ctx) <= 0)
     {
-        char errbuf[256];
-        ERR_error_string_n(ERR_get_error(), errbuf, sizeof(errbuf));
-        LOG_ERROR(std::string("RSA_private_decrypt failed: ") + errbuf);
+        LOG_ERROR("EVP_PKEY_decrypt_init failed");
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(ctx);
+        return;
     }
-    else
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0)
     {
-        if (decrypted_len >= 6)
+        LOG_ERROR("EVP_PKEY_CTX_set_rsa_padding failed");
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(ctx);
+        return;
+    }
+    size_t outlen = 0;
+    if (EVP_PKEY_decrypt(ctx, nullptr, &outlen, field2_bin.data(), field2_bin.size()) <= 0)
+    {
+        LOG_ERROR("EVP_PKEY_decrypt (size query) failed");
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(ctx);
+        return;
+    }
+    std::vector<unsigned char> decrypted(outlen);
+    if (EVP_PKEY_decrypt(ctx, decrypted.data(), &outlen, field2_bin.data(), field2_bin.size()) <= 0)
+    {
+        LOG_ERROR("EVP_PKEY_decrypt failed");
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(ctx);
+        return;
+    }
+    decrypted.resize(outlen);
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_CTX_free(ctx);
+    int decrypted_len = static_cast<int>(decrypted.size());
+    if (decrypted_len >= 6)
+    {
+        int session_key_len = (decrypted[0] << 8) | decrypted[1];
+        if (session_key_len > 0 && session_key_len + 6 <= decrypted_len)
         {
-            int session_key_len = (decrypted[0] << 8) | decrypted[1];
-            if (session_key_len > 0 && session_key_len + 6 <= decrypted_len)
+            std::string session_key_hex;
+            for (int i = 0; i < session_key_len; ++i)
             {
-                std::string session_key_hex;
-                for (int i = 0; i < session_key_len; ++i)
-                {
-                    char hex[3];
-                    snprintf(hex, sizeof(hex), "%02x", decrypted[2 + i]);
-                    session_key_hex += hex;
-                }
-                uint32_t expires = (decrypted[2 + session_key_len] << 24) |
-                                   (decrypted[2 + session_key_len + 1] << 16) |
-                                   (decrypted[2 + session_key_len + 2] << 8) |
-                                   (decrypted[2 + session_key_len + 3]);
-                LOG("Session key successfully decrypted for user: " + session_id);
-
-                // Store the session key and customer ID in the connection manager
-                ConnectionManager &conn_mgr = custom1_conn_mgr;
-                ConnectionInfo *conn_info = conn_mgr.get_connection(connection_id);
-                if (conn_info)
-                {
-                    conn_info->session_key = session_key_hex;
-                    conn_info->customer_id = *customer_id_opt;
-                    LOG("Session key stored for customer ID: " + conn_info->customer_id);
-                }
+                char hex[3];
+                snprintf(hex, sizeof(hex), "%02x", decrypted[2 + i]);
+                session_key_hex += hex;
             }
-            else
+            uint32_t expires = (decrypted[2 + session_key_len] << 24) |
+                               (decrypted[2 + session_key_len + 1] << 16) |
+                               (decrypted[2 + session_key_len + 2] << 8) |
+                               (decrypted[2 + session_key_len + 3]);
+            LOG("Session key successfully decrypted for user: " + session_id);
+
+            // Store the session key and customer ID in the connection manager
+            ConnectionManager &conn_mgr = custom1_conn_mgr;
+            ConnectionInfo *conn_info = conn_mgr.get_connection(connection_id);
+            if (conn_info)
             {
-                LOG_ERROR("Decrypted buffer too short or invalid session key length: " + std::to_string(session_key_len));
+                conn_info->session_key = session_key_hex;
+                conn_info->customer_id = *customer_id_opt;
+                LOG("Session key stored for customer ID: " + conn_info->customer_id);
             }
         }
         else
         {
-            LOG_ERROR("Decrypted buffer too short to contain session key and expiration");
+            LOG_ERROR("Decrypted buffer too short or invalid session key length: " + std::to_string(session_key_len));
         }
     }
-    RSA_free(rsa);
+    else
+    {
+        LOG_ERROR("Decrypted buffer too short to contain session key and expiration");
+    }
+
+    // NOTE: If you encounter issues with decryption or session key extraction in the future,
+    // check the following:
+    // 1. The PEM private key at 'data/private_key.pem' is valid and matches the public key used for encryption.
+    // 2. The OAEP padding is used consistently on both encryption and decryption sides.
+    // 3. The Field2 hex string is exactly 256 characters (128 bytes binary for 1024-bit RSA).
+    // 4. The EVP_PKEY/EVP_PKEY_CTX OpenSSL API is used for decryption (see above for modern usage).
+    // 5. The session_id and customer_id are correctly looked up and stored in SessionManager and ConnectionManager.
+    // 6. If you upgrade OpenSSL or change key size, update the logic and test with known-good data.
+    // 7. Use logs to compare the session_id at storage and lookup points if session lookup fails.
+    //
+    // This code is compatible with OpenSSL 3.0+ and avoids deprecated APIs.
 }
 
 /**
