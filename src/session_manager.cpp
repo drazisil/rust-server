@@ -6,8 +6,8 @@ void SessionManager::set(const std::string& session_id, const std::string& custo
 }
 
 // Returns the customer_id for a given session_id, or std::nullopt if not found
-std::optional<std::string> SessionManager::get(const std::string& session_id) {
-    std::lock_guard<std::mutex> lock(mutex_);
+std::optional<std::string> SessionManager::get(const std::string& session_id) const {
+    std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(mutex_));
     auto it = store_.find(session_id);
     if (it != store_.end()) return it->second;
     return std::nullopt;
@@ -16,4 +16,9 @@ std::optional<std::string> SessionManager::get(const std::string& session_id) {
 void SessionManager::remove(const std::string& session_id) {
     std::lock_guard<std::mutex> lock(mutex_);
     store_.erase(session_id);
+}
+
+void SessionManager::clear() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    store_.clear();
 }
