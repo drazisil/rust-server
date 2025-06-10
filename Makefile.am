@@ -33,7 +33,13 @@ test_server_LDADD = $(GTEST_OBJS) -lpthread
 
 test_server_DEPENDENCIES = $(GTEST_OBJS)
 
-TESTS = test_server
+# Build the custom1_decrypt_fixture guard test
+noinst_PROGRAMS = custom1_decrypt_fixture
+custom1_decrypt_fixture_SOURCES = src/custom1_decrypt_fixture.cpp
+custom1_decrypt_fixture_LDADD = -lssl -lcrypto
+
+# Add the guard test to the test suite
+TESTS = test_server custom1_decrypt_fixture
 
 CLEANFILES = *.gcda *.gcno *.gcov lcov.info $(GTEST_OBJS) *.dirstamp src/*.gcda src/*.gcno tests/*.gcda tests/*.gcno
 
