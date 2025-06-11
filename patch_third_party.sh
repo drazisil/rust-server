@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # Apply local patches to third-party submodules for bcrypt and crypt_blowfish integration
 # Usage: ./patch_third_party.sh
 
