@@ -29,15 +29,15 @@ jobs:
         run: |
           ./configure CXXFLAGS="-O2"
 
-      - name: Build
-        run: |
-          make
-
       - name: Make patch script executable
         run: chmod +x patch_third_party.sh
 
       - name: Apply third-party patches
         run: ./patch_third_party.sh
+
+      - name: Build
+        run: |
+          make
 
       - name: Build Google Test
         run: |
