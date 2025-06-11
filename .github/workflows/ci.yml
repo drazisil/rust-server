@@ -29,6 +29,9 @@ jobs:
         run: |
           ./configure CXXFLAGS="-O2"
 
+      - name: List files in workspace
+        run: ls -l
+
       - name: Make patch script executable
         run: chmod +x patch_third_party.sh
 
