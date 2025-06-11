@@ -4,11 +4,19 @@
 
 set -e
 
+# Clean and reset submodules before patching
+cd third_party/crypt_blowfish && git reset --hard HEAD && git clean -fd && cd - > /dev/null
+cd third_party/libbcrypt && git reset --hard HEAD && git clean -fd && cd - > /dev/null
+
 # Ensure submodules are initialized
 if [ ! -d third_party/crypt_blowfish ] || [ ! -d third_party/libbcrypt ]; then
   echo "Initializing submodules..."
   git submodule update --init --recursive
 fi
+
+# Clean and reset submodules before patching
+cd third_party/crypt_blowfish && git reset --hard HEAD && git clean -fd && cd - > /dev/null
+cd third_party/libbcrypt && git reset --hard HEAD && git clean -fd && cd - > /dev/null
 
 # Apply patch to crypt_blowfish
 if [ -f crypt_blowfish_local.patch ]; then
