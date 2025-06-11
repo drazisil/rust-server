@@ -33,6 +33,12 @@ jobs:
         run: |
           make
 
+      - name: Make patch script executable
+        run: chmod +x patch_third_party.sh
+
+      - name: Apply third-party patches
+        run: ./patch_third_party.sh
+
       - name: Build Google Test
         run: |
           cd third_party/googletest
@@ -43,7 +49,7 @@ jobs:
 
       - name: Run tests
         run: |
-          make check || true
+          make check
 
       - name: Generate coverage report
         run: |
