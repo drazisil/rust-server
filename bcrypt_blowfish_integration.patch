@@ -1,0 +1,12 @@
+diff --git a/third_party/crypt_blowfish b/third_party/crypt_blowfish
+--- a/third_party/crypt_blowfish
++++ b/third_party/crypt_blowfish
+@@ -1 +1 @@
+-Subproject commit 3354bb81eea489e972b0a7c63231514ab34f73a0
++Subproject commit 3354bb81eea489e972b0a7c63231514ab34f73a0-dirty
+diff --git a/third_party/libbcrypt b/third_party/libbcrypt
+--- a/third_party/libbcrypt
++++ b/third_party/libbcrypt
+@@ -1 +1 @@
+-Subproject commit 8aa32ad94ebe06b76853b0767c910c9fbf7ccef4
++Subproject commit 8aa32ad94ebe06b76853b0767c910c9fbf7ccef4-dirty

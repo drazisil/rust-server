@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <optional>
+#include <functional> // For std::reference_wrapper
 
 struct ConnectionInfo {
     int socket_fd; // Unique per connection
@@ -18,6 +19,9 @@ public:
     // Returns the session_key for a given customer_id, or empty string if not found
     std::string get_session_key_by_customer_id(const std::string& customer_id) const;
     void clear(); // For testability
+
+    // Add a mutable overload for get_connection
+    std::optional<std::reference_wrapper<ConnectionInfo>> get_connection(int socket_fd);
 
 private:
     mutable std::mutex mtx;

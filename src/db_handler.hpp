@@ -8,13 +8,13 @@
 class DBHandler {
 public:
     DBHandler(const std::string& db_path);
-    ~DBHandler();
-    bool connect();
-    void disconnect();
-    bool is_connected() const;
+    virtual ~DBHandler();
+    virtual bool connect();
+    virtual void disconnect();
+    virtual bool is_connected() const;
     // Example: get password hash for a username
-    std::optional<std::string> get_password_hash(const std::string& username);
-    std::optional<std::string> get_customer_id(const std::string &username);
+    virtual std::optional<std::string> get_password_hash(const std::string& username);
+    virtual std::optional<std::string> get_customer_id(const std::string &username);
     // Add more methods as needed
 private:
     struct Impl;

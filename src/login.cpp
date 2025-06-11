@@ -10,6 +10,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <mutex>
+#include "third_party/libbcrypt/bcrypt.h"
 
 extern SessionManager session_manager;
 
@@ -23,58 +24,115 @@ std::string valid_response(const std::string &session_id)
     return "Valid=TRUE\nTicket=" + session_id + "\n";
 }
 
-std::string handle_auth_login(const std::map<std::string, std::string> &params)
+namespace {
+const char *ERR_MISSING_PARAMS = "Missing parameters";
+const char *ERR_DB_CONNECT = "Database connection error";
+const char *ERR_INVALID_USER = "Invalid username or password";
+const char *ERR_INVALID_HASH = "Invalid password hash";
+const char *ERR_INVALID_CREDENTIALS = "Invalid credentials";
+const char *ERR_CUSTOMER_ID = "Failed to retrieve customer ID";
+
+bool validate_params(const std::map<std::string, std::string> &params, std::string &user, std::string &pass, std::string *err)
 {
-    // Check for 'username' and 'password' params
     auto user_it = params.find("username");
     auto pass_it = params.find("password");
     if (user_it == params.end() || pass_it == params.end() || user_it->second.empty() || pass_it->second.empty())
     {
-        LOG_ERROR("Missing parameters: Login request for user " +
-                  (user_it != params.end() ? user_it->second : "N/A") +
-                  " without password or vice versa");
-        return invalid_response("Missing parameters", "Username and password are required");
+        if (err)
+            *err = ERR_MISSING_PARAMS;
+        return false;
     }
+    user = user_it->second;
+    pass = pass_it->second;
+    return true;
+}
 
-    // Connect to database and check credentials
-    DBHandler db("data/lotus.db");
+// Helper for bcrypt hash prefix check
+static bool is_bcrypt_hash(const std::string &hash)
+{
+    return hash.rfind("$2", 0) == 0;
+}
+
+bool check_password(const std::string &password, const std::string &hash)
+{
+    if (is_bcrypt_hash(hash)) {
+        // Use libbcrypt for bcrypt hashes
+        return bcrypt_checkpw(password.c_str(), hash.c_str()) == 0;
+    } else {
+        // Fallback to legacy crypt
+        char *result = crypt(password.c_str(), hash.c_str());
+        return result && strcmp(result, hash.c_str()) == 0;
+    }
+}
+
+// Helper for parameter validation
+static bool validate_login_params(const std::map<std::string, std::string> &params, std::string &username, std::string &password, std::string &error)
+{
+    auto user_it = params.find("username");
+    auto pass_it = params.find("password");
+    if (user_it == params.end() || pass_it == params.end() || user_it->second.empty() || pass_it->second.empty())
+    {
+        error = "Username and password are required";
+        return false;
+    }
+    username = user_it->second;
+    password = pass_it->second;
+    return true;
+}
+} // close anonymous namespace
+
+// Modular, testable version
+std::string handle_auth_login_modular(const std::map<std::string, std::string> &params, DBHandler &db, SessionManager &session_mgr)
+{
+    std::string username, password, error;
+    if (!validate_login_params(params, username, password, error))
+    {
+        LOG_ERROR("Missing parameters: Login request for user " + username + " without password or vice versa");
+        return invalid_response("Missing parameters", error);
+    }
     if (!db.connect())
     {
         LOG_ERROR("Database connection error: Failed to connect to the database");
         return invalid_response("Database connection error", "Failed to connect to the database");
     }
-    auto hash_opt = db.get_password_hash(user_it->second);
+    auto hash_opt = db.get_password_hash(username);
     if (!hash_opt)
     {
-        LOG_ERROR("Invalid credentials: Username not found in database: " + user_it->second);
+        LOG_ERROR("Invalid credentials: Username not found in database: " + username);
         return invalid_response("Invalid username or password", "Username not found in database");
     }
-    // Require bcrypt hash (starts with $2, $2a, $2b, $2y)
-    if (hash_opt->rfind("$2", 0) != 0)
+    if (!is_bcrypt_hash(*hash_opt))
     {
-        LOG_ERROR("Invalid password hash: The password hash for user " + user_it->second + " does not start with $2, $2a, $2b, or $2y");
+        LOG_ERROR("Invalid password hash: The password hash for user " + username + " does not start with $2, $2a, $2b, or $2y");
         return invalid_response("Invalid password hash", "Password hash does not start with $2, $2a, $2b, or $2y");
     }
-    // Use OpenSSL's crypt(3) wrapper for bcrypt (OpenSSL 3.0+ provides crypt_blowfish)
-    char *hash = crypt(pass_it->second.c_str(), hash_opt->c_str());
-    if (!hash || strcmp(hash, hash_opt->c_str()) != 0)
+    if (!check_password(password, *hash_opt))
     {
-        LOG_ERROR("Invalid credentials: could not verify password for user " + user_it->second);
+        LOG_ERROR("Invalid credentials: could not verify password for user " + username);
         return invalid_response("Invalid credentials", "Username or password is incorrect");
     }
-
-    // If valid, get the customer ID
-    auto customer_id_opt = db.get_customer_id(user_it->second);
+    auto customer_id_opt = db.get_customer_id(username);
     if (!customer_id_opt)
     {
-        LOG_ERROR("Failed to retrieve customer ID for user " + user_it->second);
-        return invalid_response("Failed to retrieve customer ID", "Could not retrieve customer ID for user " + user_it->second);
+        LOG_ERROR("Failed to retrieve customer ID for user " + username);
+        return invalid_response("Failed to retrieve customer ID", "Could not retrieve customer ID for user " + username);
     }
-    // Generate a session_id (simple random string for now)
-    std::string session_id = std::to_string(std::hash<std::string>{}(user_it->second + std::to_string(time(nullptr))));
-    // Store the session_id and customer_id pair
+    std::string session_id = std::to_string(std::hash<std::string>{}(username + std::to_string(time(nullptr))));
     LOG("Storing session_id in SessionManager: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ") for customer_id: [" + customer_id_opt.value() + "]");
-    session_manager.set(session_id, customer_id_opt.value());
-    LOG("User " + user_it->second + " logged in successfully with session ID: " + session_id);
+    session_mgr.set(session_id, customer_id_opt.value());
+    LOG("User " + username + " logged in successfully with session ID: " + session_id);
     return valid_response(session_id);
+}
+
+// Legacy wrapper for production use
+std::string handle_auth_login(const std::map<std::string, std::string> &params)
+{
+    static DBHandler db("data/lotus.db");
+    extern SessionManager session_manager;
+    return handle_auth_login_modular(params, db, session_manager);
+}
+
+// Testable overload for unit tests
+std::string handle_auth_login(const std::map<std::string, std::string>& params, DBHandler& db, SessionManager& session_mgr) {
+    return handle_auth_login_modular(params, db, session_mgr);
 }
