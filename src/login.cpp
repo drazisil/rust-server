@@ -5,6 +5,8 @@
 #include <sstream>
 #include <openssl/evp.h>
 #include <openssl/crypto.h>
+#include <openssl/rand.h>
+#include <iomanip>
 #include <unistd.h> // For crypt()
 #include <stdio.h>
 #include <cstring>
@@ -117,7 +119,17 @@ std::string handle_auth_login_modular(const std::map<std::string, std::string> &
         LOG_ERROR("Failed to retrieve customer ID for user " + username);
         return invalid_response("Failed to retrieve customer ID", "Could not retrieve customer ID for user " + username);
     }
-    std::string session_id = std::to_string(std::hash<std::string>{}(username + std::to_string(time(nullptr))));
+    // Generate cryptographically secure random session ID
+    unsigned char random_bytes[32];
+    if (RAND_bytes(random_bytes, sizeof(random_bytes)) != 1) {
+        LOG_ERROR("Failed to generate secure random session ID");
+        return invalid_response("Internal error", "Failed to generate session");
+    }
+    std::stringstream ss;
+    for (size_t i = 0; i < sizeof(random_bytes); ++i) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)random_bytes[i];
+    }
+    std::string session_id = ss.str();
     LOG("Storing session_id in SessionManager: [" + session_id + "] (len=" + std::to_string(session_id.size()) + ") for customer_id: [" + customer_id_opt.value() + "]");
     session_mgr.set(session_id, customer_id_opt.value());
     LOG("User " + username + " logged in successfully with session ID: " + session_id);
