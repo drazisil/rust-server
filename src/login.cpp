@@ -34,20 +34,6 @@ const char *ERR_INVALID_HASH = "Invalid password hash";
 const char *ERR_INVALID_CREDENTIALS = "Invalid credentials";
 const char *ERR_CUSTOMER_ID = "Failed to retrieve customer ID";
 
-bool validate_params(const std::map<std::string, std::string> &params, std::string &user, std::string &pass, std::string *err)
-{
-    auto user_it = params.find("username");
-    auto pass_it = params.find("password");
-    if (user_it == params.end() || pass_it == params.end() || user_it->second.empty() || pass_it->second.empty())
-    {
-        if (err)
-            *err = ERR_MISSING_PARAMS;
-        return false;
-    }
-    user = user_it->second;
-    pass = pass_it->second;
-    return true;
-}
 
 // Helper for bcrypt hash prefix check
 static bool is_bcrypt_hash(const std::string &hash)
