@@ -6,9 +6,9 @@ TEST(ConnectionManagerTest, AddAndGetConnection) {
     mgr.add_connection(42);
     auto conn = mgr.get_connection(42);
     ASSERT_TRUE(conn.has_value());
-    EXPECT_EQ(conn->get().socket_fd, 42);
-    EXPECT_EQ(conn->get().session_key, "");
-    EXPECT_EQ(conn->get().customer_id, "");
+    EXPECT_EQ(conn->socket_fd, 42);
+    EXPECT_EQ(conn->session_key, "");
+    EXPECT_EQ(conn->customer_id, "");
 }
 
 TEST(ConnectionManagerTest, RemoveConnection) {
@@ -24,8 +24,10 @@ TEST(ConnectionManagerTest, GetSessionKeyByCustomerId) {
     mgr.add_connection(5);
     auto conn = mgr.get_connection(5);
     ASSERT_TRUE(conn.has_value());
-    conn->get().session_key = "abc";
-    conn->get().customer_id = "xyz";
+    ConnectionInfo updated = *conn;
+    updated.session_key = "abc";
+    updated.customer_id = "xyz";
+    mgr.set_connection(5, updated);
     EXPECT_EQ(mgr.get_session_key_by_customer_id("xyz"), "abc");
 }
 

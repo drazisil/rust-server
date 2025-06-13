@@ -20,8 +20,8 @@ public:
     std::string get_session_key_by_customer_id(const std::string& customer_id) const;
     void clear(); // For testability
 
-    // Add a mutable overload for get_connection
-    std::optional<std::reference_wrapper<ConnectionInfo>> get_connection(int socket_fd);
+    // Set or update a connection's info by socket_fd
+    void set_connection(int socket_fd, const ConnectionInfo& info);
 
 private:
     mutable std::mutex mtx;
