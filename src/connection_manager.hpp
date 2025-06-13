@@ -20,8 +20,15 @@ public:
     std::string get_session_key_by_customer_id(const std::string& customer_id) const;
     void clear(); // For testability
 
-    // Set or update a connection's info by socket_fd
-    void set_connection(int socket_fd, const ConnectionInfo& info);
+    // Thread-safe in-place update method for a connection
+    template<typename Func>
+    void update_connection(int socket_fd, Func mutator) {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = connections.find(socket_fd);
+        if (it != connections.end()) {
+            mutator(it->second);
+        }
+    }
 
 private:
     mutable std::mutex mtx;
