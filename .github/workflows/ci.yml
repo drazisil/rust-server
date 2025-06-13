@@ -29,6 +29,15 @@ jobs:
         run: |
           ./configure CXXFLAGS="-O2"
 
+      - name: List files in workspace
+        run: ls -l
+
+      - name: Make patch script executable
+        run: chmod +x patch_third_party.sh
+
+      - name: Apply third-party patches
+        run: ./patch_third_party.sh
+
       - name: Build
         run: |
           make
@@ -43,7 +52,7 @@ jobs:
 
       - name: Run tests
         run: |
-          make check || true
+          make check
 
       - name: Generate coverage report
         run: |

@@ -1,0 +1,100 @@
+diff --git a/ow-crypt.h b/ow-crypt.h
+index 2e48794..0bee51c 100644
+--- a/ow-crypt.h
++++ b/ow-crypt.h
+@@ -17,27 +17,33 @@
+ #ifndef _OW_CRYPT_H
+ #define _OW_CRYPT_H
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ #ifndef __GNUC__
+ #undef __const
+ #define __const const
+ #endif
+ 
+ #ifndef __SKIP_GNU
+-extern char *crypt(__const char *key, __const char *setting);
+-extern char *crypt_r(__const char *key, __const char *setting, void *data);
++extern char *crypt(const char *key, const char *setting);
+ #endif
+ 
+ #ifndef __SKIP_OW
+-extern char *crypt_rn(__const char *key, __const char *setting,
+-	void *data, int size);
+-extern char *crypt_ra(__const char *key, __const char *setting,
++extern char *ox_crypt_rn(const char *key, const char *setting, void *data, int size);
++extern char *crypt_ra(const char *key, const char *setting,
+ 	void **data, int *size);
+-extern char *crypt_gensalt(__const char *prefix, unsigned long count,
+-	__const char *input, int size);
+-extern char *crypt_gensalt_rn(__const char *prefix, unsigned long count,
+-	__const char *input, int size, char *output, int output_size);
+-extern char *crypt_gensalt_ra(__const char *prefix, unsigned long count,
+-	__const char *input, int size);
++extern char *crypt_gensalt(const char *prefix, unsigned long count,
++	const char *input, int size);
++extern char *ox_crypt_gensalt_rn(const char *prefix, unsigned long count,
++	const char *input, int size, char *output, int output_size);
++extern char *crypt_gensalt_ra(const char *prefix, unsigned long count,
++	const char *input, int size);
++#endif
++
++#ifdef __cplusplus
++}
+ #endif
+ 
+ #endif
+diff --git a/wrapper.c b/wrapper.c
+index 1e49c90..4c994fa 100644
+--- a/wrapper.c
++++ b/wrapper.c
+@@ -109,8 +109,7 @@ static char *_crypt_retval_magic(char *retval, const char *setting,
+  * hashing algorithms use less than 128 bytes of the data area.
+  */
+ 
+-char *__crypt_rn(__const char *key, __const char *setting,
+-	void *data, int size)
++char *ox_crypt_rn(__const char *key, __const char *setting, void *data, int size)
+ {
+ 	if (setting[0] == '$' && setting[1] == '2')
+ 		return _crypt_blowfish_rn(key, setting, (char *)data, size);
+@@ -192,13 +191,12 @@ char *crypt(const char *key, const char *setting)
+ 		setting, output, sizeof(output));
+ }
+ 
+-#define __crypt_gensalt_rn crypt_gensalt_rn
++#define __crypt_gensalt_rn ox_crypt_gensalt_rn
+ #define __crypt_gensalt_ra crypt_gensalt_ra
+ #define __crypt_gensalt crypt_gensalt
+ #endif
+ 
+-char *__crypt_gensalt_rn(const char *prefix, unsigned long count,
+-	const char *input, int size, char *output, int output_size)
++char *ox_crypt_gensalt_rn(__const char *prefix, unsigned long count, __const char *input, int size, char *output, int output_size)
+ {
+ 	char *(*use)(const char *_prefix, unsigned long _count,
+ 		const char *_input, int _size,
+@@ -264,11 +262,9 @@ char *__crypt_gensalt(const char *prefix, unsigned long count,
+ }
+ 
+ #if defined(__GLIBC__) && defined(_LIBC)
+-weak_alias(__crypt_rn, crypt_rn)
+ weak_alias(__crypt_ra, crypt_ra)
+ weak_alias(__crypt_r, crypt_r)
+ weak_alias(__crypt, crypt)
+-weak_alias(__crypt_gensalt_rn, crypt_gensalt_rn)
+ weak_alias(__crypt_gensalt_ra, crypt_gensalt_ra)
+ weak_alias(__crypt_gensalt, crypt_gensalt)
+ weak_alias(crypt, fcrypt)
+@@ -549,3 +545,8 @@ int main(void)
+ 	return 0;
+ }
+ #endif
++
++// Ensure ox_crypt_rn is always exported
++char *ox_crypt_rn(const char *key, const char *setting, void *data, int size) {
++    return crypt_rn(key, setting, data, size);
++}

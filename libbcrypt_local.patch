@@ -1,0 +1,55 @@
+diff --git a/bcrypt.c b/bcrypt.c
+index bd8722b..0f0d670 100644
+--- a/bcrypt.c
++++ b/bcrypt.c
+@@ -19,7 +19,7 @@
+ #include <errno.h>
+ 
+ #include "bcrypt.h"
+-#include "crypt_blowfish/ow-crypt.h"
++#include "../crypt_blowfish/ow-crypt.h"
+ 
+ #define RANDBYTES (16)
+ 
+@@ -116,15 +116,14 @@ int bcrypt_gensalt(int factor, char salt[BCRYPT_HASHSIZE])
+ 
+ 	/* Generate salt. */
+ 	workf = (factor < 4 || factor > 31)?12:factor;
+-	aux = crypt_gensalt_rn("$2a$", workf, input, RANDBYTES,
+-			       salt, BCRYPT_HASHSIZE);
++	aux = ox_crypt_gensalt_rn("$2a$", workf, input, RANDBYTES, salt, BCRYPT_HASHSIZE);
+ 	return (aux == NULL)?5:0;
+ }
+ 
+ int bcrypt_hashpw(const char *passwd, const char salt[BCRYPT_HASHSIZE], char hash[BCRYPT_HASHSIZE])
+ {
+ 	char *aux;
+-	aux = crypt_rn(passwd, salt, hash, BCRYPT_HASHSIZE);
++	aux = ox_crypt_rn(passwd, salt, hash, BCRYPT_HASHSIZE);
+ 	return (aux == NULL)?1:0;
+ }
+ 
+diff --git a/crypt_blowfish/ow-crypt.h b/crypt_blowfish/ow-crypt.h
+index 2e48794..29286d5 100644
+--- a/crypt_blowfish/ow-crypt.h
++++ b/crypt_blowfish/ow-crypt.h
+@@ -17,6 +17,10 @@
+ #ifndef _OW_CRYPT_H
+ #define _OW_CRYPT_H
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ #ifndef __GNUC__
+ #undef __const
+ #define __const const
+@@ -40,4 +44,8 @@ extern char *crypt_gensalt_ra(__const char *prefix, unsigned long count,
+ 	__const char *input, int size);
+ #endif
+ 
++#ifdef __cplusplus
++}
++#endif
++
+ #endif

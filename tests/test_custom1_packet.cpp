@@ -62,7 +62,7 @@ TEST(Custom1PacketTest, HandleCustom1PacketLogin) {
     EXPECT_TRUE(result);
     auto conn_info_opt = custom1_conn_mgr.get_connection(connection_id);
     ASSERT_TRUE(conn_info_opt.has_value());
-    EXPECT_EQ(conn_info_opt->session_key, expected_session_key);
-    EXPECT_EQ(conn_info_opt->customer_id, customer_id);
+    EXPECT_EQ(conn_info_opt->get().session_key, expected_session_key);
+    EXPECT_EQ(conn_info_opt->get().customer_id, customer_id);
     close(sv[0]); close(sv[1]);
 }

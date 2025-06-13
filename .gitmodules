@@ -1,3 +1,9 @@
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
+[submodule "third_party/libbcrypt"]
+	path = third_party/libbcrypt
+	url = https://github.com/rg3/libbcrypt.git
+[submodule "third_party/crypt_blowfish"]
+	path = third_party/crypt_blowfish
+	url = https://github.com/openwall/crypt_blowfish.git

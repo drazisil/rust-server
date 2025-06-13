@@ -143,7 +143,7 @@ void handle_custom1_login(const Custom1Packet &pkt, int connection_id, const std
             ConnectionManager &conn_mgr = custom1_conn_mgr;
             auto conn_info_opt = conn_mgr.get_connection(connection_id);
             if (conn_info_opt) {
-                ConnectionInfo &conn_info = const_cast<ConnectionInfo&>(*conn_info_opt);
+                ConnectionInfo &conn_info = conn_info_opt->get();
                 conn_info.session_key = session_key_hex;
                 conn_info.customer_id = *customer_id_opt;
                 LOG("Session key stored for customer ID: " + conn_info.customer_id);

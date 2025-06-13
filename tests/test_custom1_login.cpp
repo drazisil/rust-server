@@ -38,11 +38,11 @@ TEST(Custom1LoginTest, DecryptsAndStoresSessionKey) {
 
     // Act: call the handler
     Custom1Packet pkt = make_login_packet(session_id, encrypted_hex);
-    handle_custom1_login(pkt, connection_id);
+    handle_custom1_login(pkt, connection_id, "data/private_key.pem");
 
     // Assert: session key and customer_id are stored in the connection info
     auto conn_info_opt = custom1_conn_mgr.get_connection(connection_id);
     ASSERT_TRUE(conn_info_opt.has_value());
-    EXPECT_EQ(conn_info_opt->session_key, expected_session_key);
-    EXPECT_EQ(conn_info_opt->customer_id, customer_id);
+    EXPECT_EQ(conn_info_opt->get().session_key, expected_session_key);
+    EXPECT_EQ(conn_info_opt->get().customer_id, customer_id);
 }
