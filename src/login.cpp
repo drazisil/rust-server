@@ -43,14 +43,14 @@ static bool is_bcrypt_hash(const std::string &hash)
 
 bool check_password(const std::string &password, const std::string &hash)
 {
+    // Only bcrypt hashes are supported (prefix $2, $2a, $2b, $2y)
+    // Legacy crypt() fallback is no longer supported.
     if (is_bcrypt_hash(hash)) {
         // Use libbcrypt for bcrypt hashes
         return bcrypt_checkpw(password.c_str(), hash.c_str()) == 0;
-    } else {
-        // Fallback to legacy crypt
-        char *result = crypt(password.c_str(), hash.c_str());
-        return result && strcmp(result, hash.c_str()) == 0;
     }
+    // Not a valid bcrypt hash; always fail
+    return false;
 }
 
 // Helper for parameter validation
