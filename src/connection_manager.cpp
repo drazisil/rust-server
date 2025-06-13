@@ -19,15 +19,6 @@ std::optional<ConnectionInfo> ConnectionManager::get_connection(int socket_fd) c
     return std::nullopt;
 }
 
-std::optional<std::reference_wrapper<ConnectionInfo>> ConnectionManager::get_connection(int socket_fd) {
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = connections.find(socket_fd);
-    if (it != connections.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
-
 std::string ConnectionManager::get_session_key_by_customer_id(const std::string& customer_id) const {
     std::lock_guard<std::mutex> lock(mtx);
     for (const auto& [fd, info] : connections) {
