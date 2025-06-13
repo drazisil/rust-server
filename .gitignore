@@ -50,6 +50,7 @@ dist/
 *.DS_Store
 
 # Misc
+*~
 *.o
 *.lo
 *.la
