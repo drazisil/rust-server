@@ -24,10 +24,10 @@ TEST(ConnectionManagerTest, GetSessionKeyByCustomerId) {
     mgr.add_connection(5);
     auto conn = mgr.get_connection(5);
     ASSERT_TRUE(conn.has_value());
-    ConnectionInfo updated = *conn;
-    updated.session_key = "abc";
-    updated.customer_id = "xyz";
-    mgr.set_connection(5, updated);
+    mgr.update_connection(5, [](ConnectionInfo& c) {
+        c.session_key = "abc";
+        c.customer_id = "xyz";
+    });
     EXPECT_EQ(mgr.get_session_key_by_customer_id("xyz"), "abc");
 }
 

@@ -9,8 +9,8 @@
 // Helper: hex string to binary
 std::vector<unsigned char> hex_to_bin(const std::string& hex) {
     std::vector<unsigned char> out;
-    for (size_t i = 0; i < hex.size(); i += 2) {
-        unsigned char byte = (unsigned char)((std::stoi(hex.substr(i, 1), nullptr, 16) << 4) | std::stoi(hex.substr(i + 1, 1), nullptr, 16));
+    for (size_t i = 0; i + 1 < hex.size(); i += 2) {
+        unsigned char byte = (unsigned char)std::stoi(hex.substr(i, 2), nullptr, 16);
         out.push_back(byte);
     }
     return out;
